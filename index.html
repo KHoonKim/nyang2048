@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#FF6B35" />
+  <title>냥2048</title>
+  <link rel="stylesheet" href="src/styles/main.css" />
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module">
+    new MutationObserver(() => window.scrollTo(0, 0)).observe(document.getElementById('app'), { childList: true });
+    await import('./src/core/ait.js');
+
+    const { registerRoute, initRouter, navigate } = await import('./src/core/router.js');
+    const { renderTutorial } = await import('./src/ui/tutorial.js');
+    const { renderHome } = await import('./src/ui/home.js');
+    const { renderPlay } = await import('./src/ui/play.js');
+    const { renderCollection } = await import('./src/ui/collection.js');
+    const { renderResult } = await import('./src/ui/result.js');
+
+    registerRoute('tutorial', renderTutorial);
+    registerRoute('home', renderHome);
+    registerRoute('play', renderPlay);
+    registerRoute('collection', renderCollection);
+    registerRoute('result', renderResult);
+
+    const tutorialDone = localStorage.getItem('nyang2048_tutorial_done');
+    if (!tutorialDone) {
+      window.location.hash = '#tutorial';
+    } else {
+      window.location.hash = '#home';
+    }
+
+    initRouter();
+  </script>
+</body>
+</html>
