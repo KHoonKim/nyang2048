@@ -30,7 +30,7 @@ export function renderPlay() {
     const charges = getUndoCharges();
     badge.textContent = charges === 0 ? '모두 사용' : `${charges}회 남음`;
     badge.className = `undo-charge-badge${charges === 0 ? ' undo-charge-badge--empty' : ''}`;
-    if (label) label.textContent = charges === 0 ? '광고보고 3회 채우기' : '무르기';
+    if (label) label.innerHTML = charges === 0 ? `${ICON.ad} 3회 채우기` : '무르기';
   }
 
   // Show interstitial if user has already played 1+ game today
@@ -162,7 +162,7 @@ export function renderPlay() {
           <button class="play-action-card" id="undo-btn" aria-label="되돌리기">
             <span class="undo-charge-badge${getUndoCharges() === 0 ? ' undo-charge-badge--empty' : ''}">${getUndoCharges() === 0 ? '모두 사용' : `${getUndoCharges()}회 남음`}</span>
             <span class="play-action-card__icon">${ICON.undo}</span>
-            <span class="play-action-card__label">${getUndoCharges() === 0 ? '광고보고 3회 채우기' : '무르기'}</span>
+            <span class="play-action-card__label">${getUndoCharges() === 0 ? `${ICON.ad} 3회 채우기` : '무르기'}</span>
           </button>
           <button class="play-action-card" id="restart-btn" aria-label="재시작">
             <span class="play-action-card__icon">${ICON.restart}</span>
