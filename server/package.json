@@ -1,0 +1,14 @@
+{
+  "name": "nyang2048-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "TZ=Asia/Seoul node index.js",
+    "dev": "TZ=Asia/Seoul node --watch index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.8.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
+}

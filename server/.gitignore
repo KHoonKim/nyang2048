@@ -1,0 +1,7 @@
+*.db
+*.db-shm
+*.db-wal
+keys/
+node_modules/
+*.crt
+*.key
