@@ -127,26 +127,6 @@ export function saveBestTime(stageId, seconds) {
   } catch { return false; }
 }
 
-// ── Stage Stars ──
-const STARS_KEY = 'nyang2048_stars';
-
-export function getStars(stageId) {
-  try {
-    const data = JSON.parse(localStorage.getItem(STARS_KEY) || '{}');
-    return data[stageId] || 0;
-  } catch { return 0; }
-}
-
-export function saveStars(stageId, stars) {
-  try {
-    const data = JSON.parse(localStorage.getItem(STARS_KEY) || '{}');
-    if (stars > (data[stageId] || 0)) {
-      data[stageId] = stars;
-      localStorage.setItem(STARS_KEY, JSON.stringify(data));
-    }
-  } catch {}
-}
-
 // ── Stage Medals ──
 export function saveMedal(stageId, medal) {
   // medal: 'bronze' | 'silver' | 'gold'

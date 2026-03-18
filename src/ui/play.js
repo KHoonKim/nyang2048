@@ -1,14 +1,14 @@
 import { Board } from '../game/board.js';
 import { Renderer } from '../game/renderer.js';
 import { attachSwipeListener } from '../game/input.js';
-import { getCatForValue, STAGES, CAT_NAMES, getCatImage, getStageCatLineup } from '../game/stages.js';
+import { getCatForValue, STAGES, CAT_NAMES, getCatImage, getStageCatLineup, STAGE_MEDAL_TARGETS } from '../game/stages.js';
 import {
   addToCollection, COLLECTION_MAX,
   getBestScore, getBestTime,
   saveBestScore, saveBestTime,
   saveBoard, loadBoard, clearBoard,
   unlockNextStage, unlockInfinite, isInfiniteUnlocked,
-  saveStars
+  saveMedal
 } from '../game/score.js';
 import { navigate, getHashParams } from '../core/router.js';
 import { ICON } from '../core/icons.js';
@@ -201,7 +201,7 @@ export function renderPlay() {
   }
 
   let renderer = new Renderer(boardContainer, stage.rows, stage.cols, stageId);
-  let snapshot = null;
+  let history = []; // stack of snapshots for consecutive undo
   let goalReached = false;
   let splashShowing = false;
   let usedUndo = false;
@@ -342,7 +342,8 @@ export function renderPlay() {
   async function handleSwipe(direction) {
     if (splashShowing || renderer.animating) return;
 
-    snapshot = board.getSnapshot();
+    history.push(board.getSnapshot());
+    if (history.length > 10) history.shift();
     const result = board.move(direction);
     if (!result.moved) return;
 
@@ -440,6 +441,14 @@ export function renderPlay() {
     }
   }
 
+  function calcMedal(stageId, score) {
+    const targets = STAGE_MEDAL_TARGETS[stageId];
+    if (!targets) return 'bronze';
+    if (score >= targets.gold) return 'gold';
+    if (score >= targets.silver) return 'silver';
+    return 'bronze';
+  }
+
   function handleWin() {
     stopTimer();
     backGuardActive = false;
@@ -450,15 +459,12 @@ export function renderPlay() {
     if (typeof stageId === 'number') {
       unlockNextStage(stageId);
       if (stageId === 20) unlockInfinite();
-      // Calculate stars: 1=clear, 2=good score, 3=no undo
-      let stars = 1;
-      if (currentScore >= stage.goal * 8) stars = 2;
-      if (!usedUndo) stars = Math.max(stars, 2);
-      if (!usedUndo && currentScore >= stage.goal * 8) stars = 3;
-      saveStars(stageId, stars);
+      const medal = calcMedal(stageId, currentScore);
+      saveMedal(stageId, medal);
     }
+    const medal = typeof stageId === 'number' ? calcMedal(stageId, currentScore) : null;
     const cats = [...firstFoundThisGame].join(',');
-    navigate(`result?stage=${stageId}&score=${currentScore}&clear=1&time=${elapsedSeconds}${cats ? '&cats=' + cats : ''}`);
+    navigate(`result?stage=${stageId}&score=${currentScore}&clear=1&time=${elapsedSeconds}${cats ? '&cats=' + cats : ''}${medal ? '&medal=' + medal : ''}`);
   }
 
   function handleGameOver() {
@@ -473,16 +479,15 @@ export function renderPlay() {
 
   // Undo
   document.getElementById('undo-btn').addEventListener('click', async () => {
-    if (!snapshot || splashShowing) return;
+    if (history.length === 0 || splashShowing) return;
 
     const charges = getUndoCharges();
 
     if (charges > 0) {
       setUndoCharges(charges - 1);
       usedUndo = true;
-      board.restoreSnapshot(snapshot);
+      board.restoreSnapshot(history.pop());
       currentScore = board.score;
-      snapshot = null;
       doRender();
       saveCurrentBoard();
       updateUndoLabel();
@@ -495,9 +500,8 @@ export function renderPlay() {
           updateUndoLabel();
           showToast('무르기 3회 충전됐어요!');
           usedUndo = true;
-          board.restoreSnapshot(snapshot);
+          board.restoreSnapshot(history.pop());
           currentScore = board.score;
-          snapshot = null;
           doRender();
           saveCurrentBoard();
           updateUndoLabel();
@@ -586,7 +590,7 @@ export function renderPlay() {
       board = new Board(stage.rows, stage.cols);
       for (let i = 0; i < stage.initialTiles; i++) board.addRandomTile();
       currentScore = 0;
-      snapshot = null;
+      history = [];
       goalReached = false;
       stopTimer();
       elapsedSeconds = 0;
