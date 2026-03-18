@@ -1,5 +1,5 @@
 import { navigate } from '../core/router.js';
-import { getCoins, getExchanges, requestExchange, confirmExchange } from '../core/api.js';
+import { getCoins, requestExchange, confirmExchange } from '../core/api.js';
 
 const COIN_SVG = `<svg width="32" height="32" viewBox="0 0 32 32">
   <circle cx="16" cy="16" r="14" fill="var(--app-brand, #FF6B35)"/>
@@ -20,12 +20,6 @@ const SPINNER_SVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"
   </circle>
 </svg>`;
 
-function formatDate(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
-}
-
 function toast(msg) {
   let el = document.getElementById('exchange-toast');
   if (!el) {
@@ -38,24 +32,6 @@ function toast(msg) {
   el.classList.add('show');
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove('show'), 2500);
-}
-
-function renderHistoryList(exchanges) {
-  if (!exchanges || exchanges.length === 0) {
-    return `<div class="exchange-history-empty">교환 내역이 없어요</div>`;
-  }
-  return exchanges.map(ex => `
-    <div class="exchange-history-item">
-      <div class="exchange-history-item__left">
-        <div class="exchange-history-item__date">${formatDate(ex.createdAt || ex.created_at)}</div>
-        <div class="exchange-history-item__coins">코인 ${ex.coinCount || ex.coin_count || 10}개</div>
-      </div>
-      <div class="exchange-history-item__right">
-        <span class="exchange-history-item__points">${ex.points || 1}포인트</span>
-        <span class="exchange-history-item__status exchange-history-item__status--${ex.status}">${ex.status === 'confirmed' ? '완료' : ex.status === 'pending' ? '처리중' : ex.status}</span>
-      </div>
-    </div>
-  `).join('');
 }
 
 export async function renderExchange() {
@@ -88,13 +64,6 @@ export async function renderExchange() {
         </button>
       </div>
 
-      <div class="exchange-history-section">
-        <div class="exchange-history-title">교환 내역</div>
-        <div id="exchange-history-list" class="exchange-history-list">
-          <div class="exchange-history-empty">불러오는 중...</div>
-        </div>
-      </div>
-
       <div style="flex:1"></div>
     </div>
   `;
@@ -103,9 +72,7 @@ export async function renderExchange() {
     navigate('home');
   });
 
-  // Load coins and history in parallel
-  const [coinsData, exchangesData] = await Promise.all([getCoins(), getExchanges()]);
-
+  const coinsData = await getCoins();
   const coins = coinsData?.coins ?? 0;
   const canExchange = coins >= 10;
 
@@ -141,10 +108,6 @@ export async function renderExchange() {
     btn.disabled = true;
     descEl.textContent = `코인 10개 필요 (${10 - coins}개 더 모으면 가능해요)`;
   }
-
-  // Update history
-  const historyList = document.getElementById('exchange-history-list');
-  historyList.innerHTML = renderHistoryList(exchangesData?.exchanges || exchangesData || []);
 
   // Exchange button click
   btn.addEventListener('click', () => {
