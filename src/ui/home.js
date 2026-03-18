@@ -3,6 +3,7 @@ import { getUnlockedStage, isInfiniteUnlocked, getBestScore, getBestTime, getCol
 import { STAGES, getCatImage, getCatForValue, CAT_NAMES, getStageCatLineup, ALL_CATS_ORDERED } from '../game/stages.js';
 import { ICON } from '../core/icons.js';
 import { showCatDetail } from './collection.js';
+import { checkAttendance } from '../core/api.js';
 
 export function renderHome() {
   const app = document.getElementById('app');
@@ -85,6 +86,7 @@ export function renderHome() {
     <div class="home-screen">
       <div class="home-header">
         <img src="2048.png" class="home-logo" alt="냥2048">
+        <div id="streak-counter" class="streak-counter" style="display:none;"></div>
         <div class="home-header-btns">
           <button class="home-exchange-btn" id="exchange-btn">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -110,6 +112,34 @@ export function renderHome() {
 
   // Load banner ad
   if (window.AIT) AIT.loadBannerAd('home-banner-ad');
+
+  // Attendance streak (async, non-blocking)
+  (async () => {
+    try {
+      const result = await checkAttendance();
+      if (!result) return;
+      const { streak, bonusCoins } = result;
+      const counter = document.getElementById('streak-counter');
+      if (counter) {
+        const days = streak || 1;
+        counter.textContent = `🔥 ${days}일 연속 출석!`;
+        counter.style.display = 'inline-flex';
+      }
+      if (bonusCoins && bonusCoins > 0) {
+        const toast = document.createElement('div');
+        toast.className = 'streak-toast';
+        toast.textContent = `7일 연속 출석 보너스! 코인 +${bonusCoins}`;
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add('show'));
+        setTimeout(() => {
+          toast.classList.remove('show');
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      }
+    } catch {
+      // ignore errors — attendance is non-critical
+    }
+  })();
 
   // Hidden debug: tap logo 10 times within 5 seconds
   const logo = app.querySelector('.home-logo');
