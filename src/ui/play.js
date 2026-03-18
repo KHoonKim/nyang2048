@@ -167,6 +167,7 @@ export function renderPlay() {
             <span class="play-action-card__label">다시 시작</span>
           </button>
         </div>
+        <div class="ad-banner-container ad-banner-container--bottom" id="play-banner-ad"></div>
       </div>
     `;
   }
@@ -176,6 +177,7 @@ export function renderPlay() {
   const firstFoundThisGame = new Set(); // truly first discovery (count === 1)
 
   renderUI(0);
+  if (window.AIT) AIT.loadBannerAd('play-banner-ad');
   // Track game count for interstitial logic
   if (window.AIT) AIT.incrementTodayGameCount();
 
