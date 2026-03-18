@@ -1,50 +1,80 @@
 import { navigate } from '../core/router.js';
-import { getUnlockedStage, isInfiniteUnlocked, getBestScore, getCollectionCount } from '../game/score.js';
-import { STAGES, getCatImage, getCatForValue } from '../game/stages.js';
+import { getUnlockedStage, isInfiniteUnlocked, getBestScore, getBestTime, getCollectionCount, getCollection, COLLECTION_MAX, DEBUG_MODE, enableDebugMode } from '../game/score.js';
+import { STAGES, getCatImage, getCatForValue, CAT_NAMES, getStageCatLineup, ALL_CATS_ORDERED } from '../game/stages.js';
+import { ICON } from '../core/icons.js';
+import { showCatDetail } from './collection.js';
 
 export function renderHome() {
   const app = document.getElementById('app');
   const unlockedStage = getUnlockedStage();
   const infiniteUnlocked = isInfiniteUnlocked();
-  const collectionCount = getCollectionCount();
+  const totalCats = ALL_CATS_ORDERED.length;
+  const collectionCount = getCollectionCount(totalCats);
+  const collection = getCollection();
 
-  const stageCards = [1, 2, 3, 4, 5].map(n => {
+  const stageCards = Array.from({ length: 20 }, (_, i) => i + 1).map(n => {
     const stage = STAGES[n];
     const locked = n > unlockedStage;
     const best = getBestScore(n);
+    const bestTime = getBestTime(n);
 
-    // Cat previews for this stage (first 3 cats)
-    const catValues = Object.keys(stage.cats).slice(0, 3).map(Number);
-    const catPreviews = catValues.map(v => {
-      const catId = getCatForValue(n, v);
-      return catId ? `<img src="${getCatImage(catId)}" alt="${catId}">` : '';
+    const lineup = getStageCatLineup(n);
+    const collectibleCats = Object.values(stage.cats);
+    const foundCount = collectibleCats.filter(catId => (collection.get(catId) || 0) > 0).length;
+    const totalCats = collectibleCats.length;
+    const cleared = foundCount === totalCats;
+
+    const catChipsHtml = lineup.map(({ catId }) => {
+      const isCollectible = collectibleCats.includes(catId);
+      const found = DEBUG_MODE || (collection.get(catId) || 0) > 0;
+      return `
+        <div class="scat ${found ? 'scat--found' : 'scat--hidden'} ${isCollectible ? 'scat--collectible' : ''}" data-cat-id="${catId}">
+          <img src="${getCatImage(catId)}" alt="${CAT_NAMES[catId] || catId}">
+        </div>
+      `;
     }).join('');
 
+    if (locked) {
+      return `
+        <div class="stage-card stage-card--locked">
+          <div class="stage-card__top">
+            <div class="stage-card__badge">${n}</div>
+            <div class="stage-card__title-group">
+              <div class="stage-card__board">${stage.boardLabel}에서 ${lineup.length}마리 찾기 <span class="stage-card__diff">${ICON.star.repeat(stage.difficulty)}</span></div>
+            </div>
+            <div class="stage-card__lock-icon">${ICON.lock}</div>
+          </div>
+        </div>
+      `;
+    }
+
     return `
-      <button class="stage-card ${locked ? 'stage-card--locked' : ''}" data-stage="${n}">
-        <div class="stage-card__num">${n}</div>
-        <div class="stage-card__info">
-          <div class="stage-card__title">Stage ${n}</div>
-          <div class="stage-card__sub">${stage.boardLabel} · 목표 ${stage.goal.toLocaleString()}</div>
+      <button class="stage-card${cleared ? ' stage-card--cleared' : ''}" data-stage="${n}">
+        <div class="stage-card__top">
+          <div class="stage-card__badge">${n}</div>
+          <div class="stage-card__title-group">
+            <div class="stage-card__board">${stage.boardLabel}에서 ${lineup.length}마리 찾기 <span class="stage-card__diff">${ICON.star.repeat(stage.difficulty)}</span></div>
+          </div>
+          ${best > 0 || bestTime != null ? `<div class="stage-card__records">
+            ${best > 0 ? `<div class="stage-card__score"><span class="stage-card__score-label">최고점수</span> ${best.toLocaleString()}점</div>` : ''}
+            ${bestTime != null ? `<div class="stage-card__score"><span class="stage-card__score-label">최단시간</span> ${Math.floor(bestTime / 60)}:${(bestTime % 60).toString().padStart(2, '0')}</div>` : ''}
+          </div>` : ''}
         </div>
-        <div class="stage-card__right">
-          ${best > 0 ? `<div class="stage-card__best">최고점수</div><div class="stage-card__score">${best.toLocaleString()}</div>` : '<div class="stage-cat-preview">' + catPreviews + '</div>'}
-        </div>
-        ${locked ? '<div class="stage-card__lock">🔒</div>' : ''}
+        <div class="stage-card__cats">${catChipsHtml}</div>
+        ${!cleared ? `<div class="stage-card__cta tds-btn tds-btn-md tds-btn-block">도전하기</div>` : ''}
       </button>
     `;
   }).join('');
 
   const infiniteCard = infiniteUnlocked ? `
     <button class="stage-card stage-card--infinite" id="infinite-card">
-      <div class="stage-card__num">∞</div>
-      <div class="stage-card__info">
-        <div class="stage-card__title">무한모드</div>
-        <div class="stage-card__sub">목표 없이 최고점수 도전</div>
-      </div>
-      <div class="stage-card__right">
-        <div class="stage-card__best" style="color:rgba(255,255,255,0.5)">선택</div>
-        <div class="stage-card__score" style="color:#fff; font-size:13px;">보드 크기 ▸</div>
+      <div class="stage-card__top">
+        <div class="stage-card__badge stage-card__badge--inf">∞</div>
+        <div class="stage-card__title-group">
+          <div class="stage-card__board" style="color:#fff">무한모드</div>
+          <div class="stage-card__inf-sub">목표 없이 최고점수 도전</div>
+        </div>
+        <div class="stage-card__right" style="color:rgba(255,255,255,0.5);font-size:13px;font-weight:600;">보드 선택 →</div>
       </div>
     </button>
   ` : '';
@@ -52,17 +82,50 @@ export function renderHome() {
   app.innerHTML = `
     <div class="home-screen">
       <div class="home-header">
-        <div class="home-title">냥2048</div>
+        <img src="2048.png" class="home-logo" alt="냥2048">
         <button class="home-collection-btn" id="collection-btn">
-          🐱 ${collectionCount}/42
+          <img src="paw.png" class="home-collection-paw" alt="paw">
+          <span>고양이 도감</span>
+          <span class="home-collection-pct">${Math.round(collectionCount / totalCats * 100)}%</span>
         </button>
       </div>
       <div class="home-stages">
         ${stageCards}
         ${infiniteCard}
       </div>
+      <div class="ad-banner-container ad-banner-container--home" id="home-banner-ad"></div>
     </div>
   `;
+
+  // Load banner ad
+  if (window.AIT) AIT.loadBannerAd('home-banner-ad');
+
+  // Hidden debug: tap logo 10 times within 5 seconds
+  const logo = app.querySelector('.home-logo');
+  if (logo) {
+    let tapCount = 0;
+    let tapTimer = null;
+    logo.addEventListener('click', () => {
+      tapCount++;
+      if (tapCount === 1) {
+        tapTimer = setTimeout(() => { tapCount = 0; }, 5000);
+      }
+      if (tapCount >= 10) {
+        clearTimeout(tapTimer);
+        tapCount = 0;
+        enableDebugMode();
+        renderHome();
+      }
+    });
+  }
+
+  // Cat chip click — show detail popup (only for found cats)
+  app.querySelectorAll('.scat--found[data-cat-id]').forEach(chip => {
+    chip.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showCatDetail(chip.dataset.catId);
+    });
+  });
 
   // Stage card click
   app.querySelectorAll('.stage-card[data-stage]').forEach(btn => {
