@@ -120,7 +120,11 @@ export function renderResult() {
       });
     }
 
-    document.getElementById('replay-btn').addEventListener('click', () => {
+    document.getElementById('replay-btn').addEventListener('click', async () => {
+      if (window.AIT) {
+        const count = AIT.getTodayGameCount();
+        if (count >= 1 && AIT.isToss) await AIT.showAd('interstitial').catch(() => {});
+      }
       const p = isInfinite ? `infinite=${infiniteSize}` : `stage=${stageId}`;
       navigate(`play?${p}`);
     });
@@ -174,6 +178,10 @@ export function renderResult() {
 
     loadResultAd();
     document.getElementById('restart-btn').addEventListener('click', async () => {
+      if (window.AIT) {
+        const count = AIT.getTodayGameCount();
+        if (count >= 1 && AIT.isToss) await AIT.showAd('interstitial').catch(() => {});
+      }
       const p = isInfinite ? `infinite=${infiniteSize}` : `stage=${stageId}`;
       navigate(`play?${p}`);
     });
