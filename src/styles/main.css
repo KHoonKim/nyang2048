@@ -783,6 +783,37 @@ body {
 }
 .cat-card--complete .cat-card__img { opacity: 1; }
 
+/* 희귀도 테두리 */
+.cat-card--common { --rarity-color: #9E9E9E; }
+.cat-card--rare   { --rarity-color: #2196F3; }
+.cat-card--epic   { --rarity-color: #9C27B0; }
+.cat-card--legendary { --rarity-color: #FFD700; }
+
+.cat-card--rare,
+.cat-card--epic,
+.cat-card--legendary {
+  border: 2px solid var(--rarity-color);
+  box-shadow: 0 0 6px 0 color-mix(in srgb, var(--rarity-color) 40%, transparent);
+}
+
+.cat-card--legendary {
+  box-shadow: 0 0 10px 2px color-mix(in srgb, var(--rarity-color) 60%, transparent);
+}
+
+/* 희귀도 뱃지 (카드 우상단) */
+.cat-card--rare::after,
+.cat-card--epic::after,
+.cat-card--legendary::after {
+  content: attr(data-rarity-label);
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--rarity-color);
+  letter-spacing: 0.03em;
+}
+
 .cat-card__img {
   width: 72px;
   height: 72px;
@@ -1217,6 +1248,9 @@ body {
   font-weight: 600;
   color: var(--tds-sub);
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 
 /* === Cat splash overlay === */
@@ -1304,9 +1338,9 @@ body {
 .exit-confirm-card {
   background: var(--tds-card);
   border-radius: var(--tds-r20);
-  padding: 28px 24px 20px;
-  max-width: 280px;
-  width: calc(100% - 48px);
+  padding: 32px 20px 20px;
+  max-width: 312px;
+  width: calc(100% - 40px);
   text-align: center;
   box-shadow: var(--tds-shadow-md);
   transform: scale(0.85);
@@ -1314,18 +1348,18 @@ body {
 }
 .exit-confirm--visible .exit-confirm-card { transform: scale(1); }
 .exit-confirm-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--tds-text);
-  line-height: 27px;
-  margin-bottom: 6px;
+  line-height: 30px;
+  margin-bottom: 8px;
 }
 .exit-confirm-sub {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 400;
   color: var(--tds-sub);
-  line-height: 21px;
-  margin-bottom: 24px;
+  line-height: 22px;
+  margin-bottom: 28px;
 }
 .exit-confirm-buttons {
   display: flex;
@@ -1335,6 +1369,8 @@ body {
   flex: 1;
   min-width: 0;
 }
+.exit-confirm-yes { background: var(--app-brand) !important; color: #fff !important; }
+.exit-confirm-yes:active { background: var(--app-brand-dark) !important; }
 
 /* === Cat splash depth dots === */
 .cat-splash__dots {

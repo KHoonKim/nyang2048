@@ -1,6 +1,6 @@
 import { navigate } from '../core/router.js';
 import { getCollection, getCollectionCount, getCatCount, COLLECTION_MAX, DEBUG_MODE } from '../game/score.js';
-import { ALL_CATS_ORDERED, CAT_NAMES, CAT_TRAITS, getCatImage, STAGES } from '../game/stages.js';
+import { ALL_CATS_ORDERED, CAT_NAMES, CAT_TRAITS, getCatImage, STAGES, CAT_RARITY } from '../game/stages.js';
 
 export function renderCollection() {
   const app = document.getElementById('app');
@@ -26,9 +26,12 @@ export function renderCollection() {
       : `Stage ${cat.stage} · ${STAGES[cat.stage]?.boardLabel || ''}`;
     const trait = CAT_TRAITS[cat.id] || '';
     const lvClass = !found ? 'locked' : isComplete ? 'complete' : `lv${catCount}`;
+    const rarity = CAT_RARITY[cat.id] || 'common';
+    const rarityLabels = { common: '', rare: 'RARE', epic: 'EPIC', legendary: 'LEGEND' };
     return `
-      <button class="cat-card cat-card--${lvClass}"
-        data-cat-id="${cat.id}" data-collected="${found}" ${!found ? 'disabled' : ''}>
+      <button class="cat-card cat-card--${lvClass} cat-card--${rarity}"
+        data-cat-id="${cat.id}" data-collected="${found}" ${!found ? 'disabled' : ''}
+        data-rarity-label="${found ? rarityLabels[rarity] : ''}">
         ${found ? `<span class="cat-card__badge">${isComplete ? `${COLLECTION_MAX}/${COLLECTION_MAX} 수집완료` : `${catCount}/${COLLECTION_MAX}`}</span>` : ''}
         <img src="${getCatImage(cat.id)}"
           alt="${name}"
