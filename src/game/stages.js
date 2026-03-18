@@ -186,6 +186,33 @@ export const STAGES = {
   infinite: { id: 'infinite', rows: null, cols: null, size: null, goal: null, initialTiles: 2, cats: S20, boardLabel: '∞', difficulty: 0 },
 };
 
+// Medal score thresholds per stage
+// Bronze: stage clear (any score)
+// Silver: clear + score >= silver
+// Gold:   clear + score >= gold
+export const STAGE_MEDAL_TARGETS = {
+  1:  { silver:  2000, gold:   5000 },  // 5×5, goal 64
+  2:  { silver:  3000, gold:   8000 },  // 5×5, goal 128
+  3:  { silver:  6000, gold:  15000 },  // 5×5, goal 256
+  4:  { silver:  4000, gold:  10000 },  // 4×4, goal 128
+  5:  { silver:  8000, gold:  20000 },  // 4×4, goal 256
+  6:  { silver: 15000, gold:  35000 },  // 5×5, goal 512
+  7:  { silver: 12000, gold:  30000 },  // 4×4, goal 512
+  8:  { silver: 25000, gold:  60000 },  // 4×4, goal 1024
+  9:  { silver: 30000, gold:  70000 },  // 5×5, goal 1024
+  10: { silver:  6000, gold:  15000 },  // 4×3, goal 256
+  11: { silver: 50000, gold: 120000 },  // 4×4, goal 2048
+  12: { silver: 12000, gold:  28000 },  // 4×3, goal 512
+  13: { silver: 60000, gold: 150000 },  // 5×5, goal 2048
+  14: { silver: 20000, gold:  50000 },  // 4×3, goal 1024
+  15: { silver: 70000, gold: 180000 },  // 6×6, goal 2048
+  16: { silver: 100000, gold: 250000 }, // 6×6, goal 4096
+  17: { silver:  1500, gold:   4000 },  // 3×3, goal 128
+  18: { silver:  3000, gold:   8000 },  // 3×3, goal 256
+  19: { silver: 120000, gold: 300000 }, // 7×7, goal 4096
+  20: { silver: 200000, gold: 500000 }, // 8×8, goal 8192
+};
+
 // Ordered list of all cats with their stage context
 export const ALL_CATS_ORDERED = [
   ...Object.values(COMMON_CATS).map(id => ({ id, stage: 'common' })),
