@@ -1,5 +1,5 @@
 import { navigate } from '../core/router.js';
-import { getUnlockedStage, isInfiniteUnlocked, getBestScore, getBestTime, getCollectionCount, getCollection, COLLECTION_MAX, DEBUG_MODE, enableDebugMode } from '../game/score.js';
+import { getUnlockedStage, isInfiniteUnlocked, getBestScore, getBestTime, getCollectionCount, getCollection, COLLECTION_MAX, DEBUG_MODE, enableDebugMode, getMedal } from '../game/score.js';
 import { STAGES, getCatImage, getCatForValue, CAT_NAMES, getStageCatLineup, ALL_CATS_ORDERED } from '../game/stages.js';
 import { ICON } from '../core/icons.js';
 import { showCatDetail } from './collection.js';
@@ -23,6 +23,8 @@ export function renderHome() {
     const foundCount = collectibleCats.filter(catId => (collection.get(catId) || 0) > 0).length;
     const totalCats = collectibleCats.length;
     const cleared = foundCount === totalCats;
+    const medal = getMedal(n);
+    const medalEmoji = medal === 'gold' ? '🥇' : medal === 'silver' ? '🥈' : medal === 'bronze' ? '🥉' : '';
 
     const catChipsHtml = lineup.map(({ catId }) => {
       const isCollectible = collectibleCats.includes(catId);
@@ -53,7 +55,7 @@ export function renderHome() {
         <div class="stage-card__top">
           <div class="stage-card__badge">${n}</div>
           <div class="stage-card__title-group">
-            <div class="stage-card__board">${stage.boardLabel}에서 ${lineup.length}마리 찾기 <span class="stage-card__diff">${ICON.star.repeat(stage.difficulty)}</span></div>
+            <div class="stage-card__board">${stage.boardLabel}에서 ${lineup.length}마리 찾기 <span class="stage-card__diff">${medalEmoji || ICON.star.repeat(stage.difficulty)}</span></div>
           </div>
           ${best > 0 || bestTime != null ? `<div class="stage-card__records">
             ${best > 0 ? `<div class="stage-card__score"><span class="stage-card__score-label">최고점수</span> ${best.toLocaleString()}점</div>` : ''}
@@ -118,14 +120,6 @@ export function renderHome() {
       }
     });
   }
-
-  // Cat chip click — show detail popup (only for found cats)
-  app.querySelectorAll('.scat--found[data-cat-id]').forEach(chip => {
-    chip.addEventListener('click', (e) => {
-      e.stopPropagation();
-      showCatDetail(chip.dataset.catId);
-    });
-  });
 
   // Stage card click
   app.querySelectorAll('.stage-card[data-stage]').forEach(btn => {

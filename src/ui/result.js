@@ -1,5 +1,5 @@
 import { navigate, getHashParams } from '../core/router.js';
-import { getBestScore, getBestTime } from '../game/score.js';
+import { getBestScore, getBestTime, getMedal } from '../game/score.js';
 import { getCatImage, CAT_NAMES, STAGES } from '../game/stages.js';
 
 export function renderResult() {
@@ -19,6 +19,16 @@ export function renderResult() {
   const elapsedMin = Math.floor(elapsedSeconds / 60);
   const elapsedSec = elapsedSeconds % 60;
   const elapsedStr = `${elapsedMin}:${elapsedSec.toString().padStart(2, '0')}`;
+
+  const medalParam = params.medal;
+  const medalEmojiMap = { gold: '🥇', silver: '🥈', bronze: '🥉' };
+  const medalLabelMap = { gold: '골드 메달 획득!', silver: '실버 메달 획득!', bronze: '브론즈 메달 획득!' };
+  const medalHtml = (!isInfinite && medalParam && medalEmojiMap[medalParam]) ? `
+    <div class="result-medal">
+      <div class="result-medal__emoji">${medalEmojiMap[medalParam]}</div>
+      <div class="result-medal__label">${medalLabelMap[medalParam]}</div>
+    </div>
+  ` : '';
 
   // Discovered cats from this play session
   const discoveredCats = params.cats ? params.cats.split(',').filter(Boolean) : [];
@@ -69,6 +79,7 @@ export function renderResult() {
       <div class="result-screen">
         <div class="result-emoji">🎉</div>
         <div class="result-title result-title--clear">${stageLabel} 클리어!</div>
+        ${medalHtml}
         <div class="play-header">
           <div class="play-header__block">
             <div class="play-header__current">
