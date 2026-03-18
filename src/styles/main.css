@@ -1212,7 +1212,7 @@ body {
 }
 .play-action-card__icon svg { width: 22px; height: 22px; }
 .play-action-card__label {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--tds-sub);
   white-space: nowrap;
@@ -1363,7 +1363,7 @@ body {
 .undo-charge-badge {
   position: absolute;
   top: -6px;
-  right: -20px;
+  right: 0;
   background: var(--app-brand-light);
   color: var(--app-brand);
   font-size: 10px;
