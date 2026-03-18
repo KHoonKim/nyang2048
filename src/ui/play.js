@@ -158,10 +158,8 @@ export function renderPlay() {
             <span class="play-action-card__label">홈</span>
           </button>
           <button class="play-action-card" id="undo-btn" aria-label="되돌리기">
-            <span class="play-action-card__icon">
-              ${ICON.undo}
-              <span class="undo-charge-badge${getUndoCharges() === 0 ? ' undo-charge-badge--empty' : ''}">${getUndoCharges()}회 남음</span>
-            </span>
+            <span class="undo-charge-badge${getUndoCharges() === 0 ? ' undo-charge-badge--empty' : ''}">${getUndoCharges()}회 남음</span>
+            <span class="play-action-card__icon">${ICON.undo}</span>
             <span class="play-action-card__label">무르기</span>
           </button>
           <button class="play-action-card" id="restart-btn" aria-label="재시작">
