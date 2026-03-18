@@ -1,6 +1,6 @@
 import { navigate, getHashParams } from '../core/router.js';
-import { getBestScore, getCollection } from '../game/score.js';
-import { getCatImage, CAT_NAMES, STAGES, getCatForValue } from '../game/stages.js';
+import { getBestScore, getBestTime } from '../game/score.js';
+import { getCatImage, CAT_NAMES, STAGES } from '../game/stages.js';
 
 export function renderResult() {
   const params = getHashParams();
@@ -12,20 +12,16 @@ export function renderResult() {
 
   const boardKey = isInfinite ? `inf_${infiniteSize}` : stageId;
   const bestScore = getBestScore(boardKey);
+  const bestTime = getBestTime(boardKey);
+  const bestTimeStr = bestTime ? `${Math.floor(bestTime / 60)}:${(bestTime % 60).toString().padStart(2, '0')}` : '--:--';
 
-  // Find highest cat in collection to show
-  const collection = getCollection();
-  let showcatId = null;
-  if (isClear && stageId !== 'infinite') {
-    // Find the goal cat for this stage
-    const stage = STAGES[stageId];
-    if (stage) {
-      const goalCatId = getCatForValue(stageId, stage.goal);
-      if (goalCatId && collection.has(goalCatId)) {
-        showcatId = goalCatId;
-      }
-    }
-  }
+  const elapsedSeconds = parseInt(params.time || '0', 10);
+  const elapsedMin = Math.floor(elapsedSeconds / 60);
+  const elapsedSec = elapsedSeconds % 60;
+  const elapsedStr = `${elapsedMin}:${elapsedSec.toString().padStart(2, '0')}`;
+
+  // Discovered cats from this play session
+  const discoveredCats = params.cats ? params.cats.split(',').filter(Boolean) : [];
 
   const stageLabel = isInfinite
     ? `무한모드 ${infiniteSize}×${infiniteSize}`
@@ -42,7 +38,7 @@ export function renderResult() {
         el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
         el.style.animationDelay = '0s';
         el.style.width = el.style.height = (6 + Math.random() * 8) + 'px';
-        document.body.appendChild(el);
+        document.documentElement.appendChild(el);
         setTimeout(() => el.remove(), 3500);
       }, i * 40);
     }
@@ -50,12 +46,20 @@ export function renderResult() {
 
   const app = document.getElementById('app');
 
-  const newCatHtml = showcatId ? `
-    <div class="result-new-cat">
-      <img src="${getCatImage(showcatId)}" alt="${CAT_NAMES[showcatId] || showcatId}">
-      <div class="result-new-cat__text">
-        <div class="result-new-cat__label">새 고양이 획득!</div>
-        <div class="result-new-cat__name">${CAT_NAMES[showcatId] || showcatId}</div>
+  function loadResultAd() {
+    if (window.AIT) AIT.loadBannerAd('result-bottom-ad', { image: true });
+  }
+
+  const newCatHtml = discoveredCats.length > 0 ? `
+    <div class="result-new-cats">
+      <div class="result-new-cats__label">새 고양이 발견!</div>
+      <div class="result-new-cats__list">
+        ${discoveredCats.map(catId => `
+          <div class="result-new-cat">
+            <img src="${getCatImage(catId)}" alt="${CAT_NAMES[catId] || catId}">
+            <div class="result-new-cat__name">${CAT_NAMES[catId] || catId}</div>
+          </div>
+        `).join('')}
       </div>
     </div>
   ` : '';
@@ -65,45 +69,64 @@ export function renderResult() {
       <div class="result-screen">
         <div class="result-emoji">🎉</div>
         <div class="result-title result-title--clear">${stageLabel} 클리어!</div>
-        <div class="result-scores">
-          <div class="result-score-box">
-            <div class="result-score-box__label">점수</div>
-            <div class="result-score-box__value">${score.toLocaleString()}</div>
+        <div class="play-header">
+          <div class="play-header__block">
+            <div class="play-header__current">
+              <span class="play-header__label">점수</span>
+              <span class="play-header__value">${score.toLocaleString()}</span>
+            </div>
+            <div class="play-header__best-wrap">
+              <span class="play-header__label">최고</span>
+              <span class="play-header__best">${bestScore.toLocaleString()}</span>
+            </div>
           </div>
-          <div class="result-score-box">
-            <div class="result-score-box__label">최고기록</div>
-            <div class="result-score-box__value">${bestScore.toLocaleString()}</div>
+          <div class="play-header__block">
+            <div class="play-header__current">
+              <span class="play-header__label">시간</span>
+              <span class="play-header__value">${elapsedStr}</span>
+            </div>
+            <div class="play-header__best-wrap">
+              <span class="play-header__label">최단</span>
+              <span class="play-header__best">${bestTimeStr}</span>
+            </div>
           </div>
         </div>
         ${newCatHtml}
         <div class="result-buttons">
-          <button class="tds-btn tds-btn-primary tds-btn-xl tds-btn-block" id="continue-btn">
-            계속 플레이
-          </button>
-          <button class="tds-btn tds-btn-light tds-btn-xl tds-btn-block" id="home-btn">
-            홈으로
-          </button>
-          <button class="tds-btn tds-btn-weak-primary tds-btn-md tds-btn-block" id="collection-btn">
-            🐱 도감 보기
-          </button>
+          ${!isInfinite && STAGES[stageId + 1] ? `
+          <button class="tds-btn result-btn-brand tds-btn-xl tds-btn-block" id="next-stage-btn">
+            다음 스테이지로
+          </button>` : ''}
+          <div class="result-buttons-row">
+            <button class="tds-btn ${!isInfinite && STAGES[stageId + 1] ? 'tds-btn-light' : 'tds-btn-primary'} tds-btn-xl tds-btn-half" id="replay-btn">
+              다시 플레이
+            </button>
+            <button class="tds-btn tds-btn-light tds-btn-xl tds-btn-half" id="home-btn">
+              홈으로
+            </button>
+          </div>
         </div>
+        <div class="ad-banner-container ad-banner-container--bottom" id="result-bottom-ad"></div>
       </div>
     `;
 
+    loadResultAd();
     setTimeout(spawnConfetti, 300);
 
-    document.getElementById('continue-btn').addEventListener('click', () => {
+    const nextBtn = document.getElementById('next-stage-btn');
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        navigate(`play?stage=${stageId + 1}`);
+      });
+    }
+
+    document.getElementById('replay-btn').addEventListener('click', () => {
       const p = isInfinite ? `infinite=${infiniteSize}` : `stage=${stageId}`;
       navigate(`play?${p}`);
     });
 
     document.getElementById('home-btn').addEventListener('click', async () => {
-      if (window.AIT) await AIT.showAd('interstitial');
       navigate('home');
-    });
-
-    document.getElementById('collection-btn').addEventListener('click', () => {
-      navigate('collection');
     });
 
   } else {
@@ -113,43 +136,51 @@ export function renderResult() {
         <div class="result-emoji">😿</div>
         <div class="result-title">게임 오버</div>
         <div style="font-size:14px; color:var(--tds-sub); margin-bottom:16px;">${stageLabel}</div>
-        <div class="result-scores">
-          <div class="result-score-box">
-            <div class="result-score-box__label">점수</div>
-            <div class="result-score-box__value">${score.toLocaleString()}</div>
+        <div class="play-header">
+          <div class="play-header__block">
+            <div class="play-header__current">
+              <span class="play-header__label">점수</span>
+              <span class="play-header__value">${score.toLocaleString()}</span>
+            </div>
+            <div class="play-header__best-wrap">
+              <span class="play-header__label">최고</span>
+              <span class="play-header__best">${bestScore.toLocaleString()}</span>
+            </div>
           </div>
-          <div class="result-score-box">
-            <div class="result-score-box__label">최고기록</div>
-            <div class="result-score-box__value">${bestScore.toLocaleString()}</div>
+          <div class="play-header__block">
+            <div class="play-header__current">
+              <span class="play-header__label">시간</span>
+              <span class="play-header__value">${elapsedStr}</span>
+            </div>
+            <div class="play-header__best-wrap">
+              <span class="play-header__label">최단</span>
+              <span class="play-header__best">${bestTimeStr}</span>
+            </div>
           </div>
         </div>
         <div class="result-buttons">
-          <button class="tds-btn tds-btn-primary tds-btn-xl tds-btn-block" id="restart-btn">
-            🔄 재시작 (광고)
-          </button>
-          <button class="tds-btn tds-btn-light tds-btn-xl tds-btn-block" id="home-btn">
-            🏠 홈으로 (광고)
-          </button>
-          <button class="tds-btn tds-btn-weak-primary tds-btn-md tds-btn-block" id="collection-btn">
-            🐱 도감 보기
-          </button>
+          <div class="result-buttons-row">
+            <button class="tds-btn tds-btn-primary tds-btn-xl tds-btn-half" id="restart-btn">
+              다시 플레이
+            </button>
+            <button class="tds-btn tds-btn-light tds-btn-xl tds-btn-half" id="home-btn">
+              홈으로
+            </button>
+          </div>
         </div>
+        <div class="ad-banner-container ad-banner-container--bottom" id="result-bottom-ad"></div>
       </div>
     `;
 
+    loadResultAd();
     document.getElementById('restart-btn').addEventListener('click', async () => {
-      if (window.AIT) await AIT.showAd('interstitial');
       const p = isInfinite ? `infinite=${infiniteSize}` : `stage=${stageId}`;
       navigate(`play?${p}`);
     });
 
     document.getElementById('home-btn').addEventListener('click', async () => {
-      if (window.AIT) await AIT.showAd('interstitial');
       navigate('home');
     });
 
-    document.getElementById('collection-btn').addEventListener('click', () => {
-      navigate('collection');
-    });
   }
 }
