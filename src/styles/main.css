@@ -1454,3 +1454,254 @@ body {
 .ad-banner-container--bottom {
   padding: 8px 16px 24px;
 }
+
+/* ===== HOME: exchange button ===== */
+.home-header-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-exchange-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--tds-card);
+  border: none;
+  border-radius: var(--tds-r-full);
+  padding: 6px 12px 6px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tds-blue, #3182F6);
+  cursor: pointer;
+  box-shadow: var(--tds-shadow);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s;
+}
+.home-exchange-btn:active { transform: scale(0.96); }
+
+/* ===== EXCHANGE SCREEN ===== */
+.exchange-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--tds-bg);
+}
+
+.exchange-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 16px 12px;
+  background: var(--tds-card);
+}
+
+.exchange-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+.exchange-back-btn:active { background: var(--tds-grey-100); }
+
+.exchange-header__title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--tds-text);
+}
+
+.exchange-balance-card {
+  background: var(--tds-card);
+  padding: 20px 20px 24px;
+}
+
+.exchange-balance-loading {
+  color: var(--tds-sub);
+  font-size: 14px;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.exchange-balance-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0;
+}
+
+.exchange-balance-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.exchange-balance-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tds-sub);
+}
+
+.exchange-balance-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--tds-text);
+}
+
+.exchange-balance-rate {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tds-blue, #3182F6);
+}
+
+.exchange-balance-divider {
+  width: 1px;
+  height: 48px;
+  background: var(--tds-grey-100, #f2f4f6);
+  margin: 0 16px;
+}
+
+.exchange-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  background: var(--tds-card);
+  border: none;
+  border-radius: 16px;
+  padding: 16px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--tds-shadow);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s, opacity 0.2s;
+}
+.exchange-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.exchange-btn--active:active { transform: scale(0.98); }
+
+.exchange-btn__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: rgba(49, 130, 246, 0.1);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.exchange-btn__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.exchange-btn__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--tds-text);
+}
+
+.exchange-btn__desc {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tds-sub);
+}
+
+.exchange-history-section {
+  padding: 24px 16px 0;
+  flex: 1;
+}
+
+.exchange-history-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--tds-text);
+  margin-bottom: 12px;
+}
+
+.exchange-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.exchange-history-empty {
+  font-size: 14px;
+  color: var(--tds-sub);
+  text-align: center;
+  padding: 24px 0;
+}
+
+.exchange-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--tds-card);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.exchange-history-item__left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.exchange-history-item__date {
+  font-size: 12px;
+  color: var(--tds-sub);
+  font-weight: 500;
+}
+
+.exchange-history-item__coins {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tds-text);
+}
+
+.exchange-history-item__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.exchange-history-item__points {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--tds-blue, #3182F6);
+}
+
+.exchange-history-item__status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--tds-r-full);
+}
+
+.exchange-history-item__status--confirmed {
+  background: rgba(49, 130, 246, 0.1);
+  color: var(--tds-blue, #3182F6);
+}
+
+.exchange-history-item__status--pending {
+  background: var(--tds-grey-100, #f2f4f6);
+  color: var(--tds-sub);
+}

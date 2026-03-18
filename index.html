@@ -19,12 +19,14 @@
     const { renderPlay } = await import('./src/ui/play.js');
     const { renderCollection } = await import('./src/ui/collection.js');
     const { renderResult } = await import('./src/ui/result.js');
+    const { renderExchange } = await import('./src/ui/exchange.js');
 
     registerRoute('tutorial', renderTutorial);
     registerRoute('home', renderHome);
     registerRoute('play', renderPlay);
     registerRoute('collection', renderCollection);
     registerRoute('result', renderResult);
+    registerRoute('exchange', renderExchange);
 
     const tutorialDone = localStorage.getItem('nyang2048_tutorial_done');
     if (!tutorialDone) {

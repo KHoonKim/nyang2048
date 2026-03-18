@@ -85,11 +85,20 @@ export function renderHome() {
     <div class="home-screen">
       <div class="home-header">
         <img src="2048.png" class="home-logo" alt="냥2048">
-        <button class="home-collection-btn" id="collection-btn">
-          <img src="paw.png" class="home-collection-paw" alt="paw">
-          <span>고양이 도감</span>
-          <span class="home-collection-pct">${Math.round(collectionCount / totalCats * 100)}%</span>
-        </button>
+        <div class="home-header-btns">
+          <button class="home-exchange-btn" id="exchange-btn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="7" fill="var(--tds-blue, #3182F6)"/>
+              <text x="8" y="12" text-anchor="middle" font-size="9" font-weight="900" fill="#fff" font-family="inherit">P</text>
+            </svg>
+            <span>포인트 교환</span>
+          </button>
+          <button class="home-collection-btn" id="collection-btn">
+            <img src="paw.png" class="home-collection-paw" alt="paw">
+            <span>고양이 도감</span>
+            <span class="home-collection-pct">${Math.round(collectionCount / totalCats * 100)}%</span>
+          </button>
+        </div>
       </div>
       <div class="home-stages">
         ${stageCards}
@@ -134,6 +143,11 @@ export function renderHome() {
   if (infCard) {
     infCard.addEventListener('click', () => showInfiniteSizeSelector());
   }
+
+  // Exchange button
+  document.getElementById('exchange-btn').addEventListener('click', () => {
+    navigate('exchange');
+  });
 
   // Collection button
   document.getElementById('collection-btn').addEventListener('click', () => {
