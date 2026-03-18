@@ -8,12 +8,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // mTLS 인증서 로드 (프로덕션: /root/, 로컬: 프로젝트 루트)
 const projectRoot = path.join(__dirname, '..', '..');
-const certPath = fs.existsSync('/root/gift-cat_public.crt')
-  ? '/root/gift-cat_public.crt'
-  : path.join(projectRoot, 'gift-cat_public.crt');
-const keyPath = fs.existsSync('/root/gift-cat_private.key')
-  ? '/root/gift-cat_private.key'
-  : path.join(projectRoot, 'gift-cat_private.key');
+const certPath = fs.existsSync('/root/nyang2048_public.crt')
+  ? '/root/nyang2048_public.crt'
+  : path.join(projectRoot, 'nyang2048_public.crt');
+const keyPath = fs.existsSync('/root/nyang2048_private.key')
+  ? '/root/nyang2048_private.key'
+  : path.join(projectRoot, 'nyang2048_private.key');
 const hasCerts = fs.existsSync(certPath) && fs.existsSync(keyPath);
 
 let tossAgent = null;

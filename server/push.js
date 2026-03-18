@@ -17,12 +17,12 @@ function getTemplateId(db) {
 }
 
 function loadCerts() {
-  const certPath = fs.existsSync('/root/gift-cat_public.crt')
-    ? '/root/gift-cat_public.crt'
-    : path.join(__dirname, '..', 'gift-cat_public.crt');
-  const keyPath = fs.existsSync('/root/gift-cat_private.key')
-    ? '/root/gift-cat_private.key'
-    : path.join(__dirname, '..', 'gift-cat_private.key');
+  const certPath = fs.existsSync('/root/nyang2048_public.crt')
+    ? '/root/nyang2048_public.crt'
+    : path.join(__dirname, '..', 'nyang2048_public.crt');
+  const keyPath = fs.existsSync('/root/nyang2048_private.key')
+    ? '/root/nyang2048_private.key'
+    : path.join(__dirname, '..', 'nyang2048_private.key');
 
   if (!fs.existsSync(certPath) || !fs.existsSync(keyPath)) {
     return null;
