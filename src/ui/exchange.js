@@ -72,7 +72,8 @@ export async function renderExchange() {
     navigate('home');
   });
 
-  const coinsData = await getCoins();
+  let coinsData = null;
+  try { coinsData = await getCoins(); } catch {}
   const coins = coinsData?.coins ?? 0;
   const canExchange = coins >= 10;
 
