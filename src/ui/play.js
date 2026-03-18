@@ -24,11 +24,11 @@ export function renderPlay() {
   if (localStorage.getItem('nyang-undo-charges') === null) setUndoCharges(3);
 
   function updateUndoLabel() {
-    const btn = document.getElementById('undo-btn');
-    if (!btn) return;
+    const badge = document.querySelector('.undo-charge-badge');
+    if (!badge) return;
     const charges = getUndoCharges();
-    const chargeSymbols = ['○', '①', '②', '③'];
-    btn.querySelector('.play-action-card__label').textContent = `무르기 ${chargeSymbols[Math.min(charges, 3)]}`;
+    badge.textContent = charges;
+    badge.className = `undo-charge-badge${charges === 0 ? ' undo-charge-badge--empty' : ''}`;
   }
 
   // Show interstitial if user has already played 1+ game today
@@ -158,8 +158,11 @@ export function renderPlay() {
             <span class="play-action-card__label">홈</span>
           </button>
           <button class="play-action-card" id="undo-btn" aria-label="되돌리기">
-            <span class="play-action-card__icon">${ICON.undo}</span>
-            <span class="play-action-card__label">무르기 ${['○','①','②','③'][Math.min(getUndoCharges(), 3)]}</span>
+            <span class="play-action-card__icon">
+              ${ICON.undo}
+              <span class="undo-charge-badge${getUndoCharges() === 0 ? ' undo-charge-badge--empty' : ''}">${getUndoCharges()}</span>
+            </span>
+            <span class="play-action-card__label">무르기</span>
           </button>
           <button class="play-action-card" id="restart-btn" aria-label="재시작">
             <span class="play-action-card__icon">${ICON.restart}</span>

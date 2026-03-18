@@ -1356,6 +1356,31 @@ body {
   text-align: center;
 }
 
+/* ===== Undo Charge Badge ===== */
+.play-action-card__icon {
+  position: relative;
+}
+.undo-charge-badge {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  background: var(--app-brand);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+}
+.undo-charge-badge--empty {
+  background: var(--tds-grey-400, #b0b8c1);
+}
+
 /* ===== Ad Containers ===== */
 .ad-banner-container {
   width: 100%;
