@@ -27,7 +27,7 @@ export function renderPlay() {
     const badge = document.querySelector('.undo-charge-badge');
     if (!badge) return;
     const charges = getUndoCharges();
-    badge.textContent = charges;
+    badge.textContent = `${charges}회 남음`;
     badge.className = `undo-charge-badge${charges === 0 ? ' undo-charge-badge--empty' : ''}`;
   }
 
@@ -160,7 +160,7 @@ export function renderPlay() {
           <button class="play-action-card" id="undo-btn" aria-label="되돌리기">
             <span class="play-action-card__icon">
               ${ICON.undo}
-              <span class="undo-charge-badge${getUndoCharges() === 0 ? ' undo-charge-badge--empty' : ''}">${getUndoCharges()}</span>
+              <span class="undo-charge-badge${getUndoCharges() === 0 ? ' undo-charge-badge--empty' : ''}">${getUndoCharges()}회 남음</span>
             </span>
             <span class="play-action-card__label">무르기</span>
           </button>
@@ -175,6 +175,7 @@ export function renderPlay() {
 
   const discoveredThisGame = new Set(['korean', 'russian']); // common cats always visible
   const collectedThisGame = new Set(); // limit collection +1 per cat per play
+  const firstFoundThisGame = new Set(); // truly first discovery (count === 1)
 
   renderUI(0);
   // Track game count for interstitial logic
@@ -366,6 +367,7 @@ export function renderPlay() {
         collectedThisGame.add(catId);
         const count = addToCollection(catId);
         if (count > 0) newCatFinds.push({ catId, count });
+        if (count === 1) firstFoundThisGame.add(catId);
       }
     }
 
@@ -453,7 +455,7 @@ export function renderPlay() {
       if (!usedUndo && currentScore >= stage.goal * 8) stars = 3;
       saveStars(stageId, stars);
     }
-    const cats = [...collectedThisGame].join(',');
+    const cats = [...firstFoundThisGame].join(',');
     navigate(`result?stage=${stageId}&score=${currentScore}&clear=1&time=${elapsedSeconds}${cats ? '&cats=' + cats : ''}`);
   }
 
@@ -463,7 +465,7 @@ export function renderPlay() {
     window.removeEventListener('popstate', onPopState);
     clearBoard(stage.boardKey);
     const stageParam = stageId === 'infinite' ? `infinite=${stage.size}` : `stage=${stageId}`;
-    const cats = [...collectedThisGame].join(',');
+    const cats = [...firstFoundThisGame].join(',');
     navigate(`result?${stageParam}&score=${currentScore}&clear=0&time=${elapsedSeconds}${cats ? '&cats=' + cats : ''}`);
   }
 
