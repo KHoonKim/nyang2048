@@ -1,10 +1,13 @@
-// ===== AIT BRIDGE (nyang2048 — client-only, no server) =====
+// ===== AIT BRIDGE (nyang2048) =====
+
 import { TossAds } from '@apps-in-toss/web-framework';
 
 const CONFIG = {
   APP_NAME: 'nyang2048',
-  AD_BANNER_ID: 'ait.v2.live.CHANGE_ME',
-  AD_INTERSTITIAL_ID: 'ait.v2.live.CHANGE_ME',
+  AD_BANNER_ID: 'PLACEHOLDER_BANNER',
+  AD_IMAGE_BANNER_ID: 'PLACEHOLDER_IMAGE_BANNER',
+  AD_INTERSTITIAL_ID: 'PLACEHOLDER_INTERSTITIAL',
+  AD_REWARDED_ID: 'PLACEHOLDER_REWARDED',
 };
 
 if (typeof window !== 'undefined' && !window.__GRANITE_NATIVE_EMITTER) {
@@ -22,8 +25,10 @@ if (typeof window !== 'undefined' && !window.__GRANITE_NATIVE_EMITTER) {
 window.AIT = (() => {
   const _bridge = (typeof window !== 'undefined') ? (window.__granite__ || window.__ait__) : null;
   const isToss = (typeof window !== 'undefined') && !!(window.ReactNativeWebView || _bridge) || (typeof navigator !== 'undefined' && navigator.userAgent.includes('TossApp'));
-  let _adLoaded = { interstitial: false };
+  let _userHash = null;
+  let _adLoaded = { interstitial: false, rewarded: false };
 
+  // ── Native Bridge Helpers ──
   function _bridgeCall(method, args = []) {
     return new Promise((resolve, reject) => {
       const rnwv = typeof window !== 'undefined' && window.ReactNativeWebView;
@@ -54,11 +59,55 @@ window.AIT = (() => {
     };
   }
 
+  // ── User Key (anonymous, no server) ──
+  async function getUserHash() {
+    if (_userHash) return _userHash;
+    if (!isToss) {
+      _userHash = 'web_' + (localStorage.getItem('nyang-uid') || (() => {
+        const id = crypto.randomUUID();
+        localStorage.setItem('nyang-uid', id);
+        return id;
+      })());
+      return _userHash;
+    }
+    try {
+      const result = await Promise.race([
+        _bridgeCall('getUserKeyForGame'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
+      ]);
+      if (result && result.type === 'HASH') { _userHash = result.hash; return _userHash; }
+    } catch (e) {
+      console.warn('AIT getUserKeyForGame failed:', e);
+    }
+    const stored = localStorage.getItem('nyang-uid');
+    if (stored) { _userHash = stored; return _userHash; }
+    _userHash = 'toss_anonymous_' + Math.random().toString(36).slice(2);
+    localStorage.setItem('nyang-uid', _userHash);
+    return _userHash;
+  }
+
+  // ── Daily Game Counter ──
+  function getTodayGameCount() {
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      const stored = JSON.parse(localStorage.getItem('nyang-game-count') || '{}');
+      return stored.date === today ? (stored.count || 0) : 0;
+    } catch { return 0; }
+  }
+
+  function incrementTodayGameCount() {
+    const today = new Date().toISOString().slice(0, 10);
+    const count = getTodayGameCount() + 1;
+    localStorage.setItem('nyang-game-count', JSON.stringify({ date: today, count }));
+    return count;
+  }
+
+  // ── Interstitial / Rewarded Ads ──
   const _preloadRetryTimers = {};
 
-  function preloadAd(type = 'interstitial', _retryCount = 0) {
+  function preloadAd(type, _retryCount = 0) {
     if (!isToss) return;
-    const id = CONFIG.AD_INTERSTITIAL_ID;
+    const id = type === 'rewarded' ? CONFIG.AD_REWARDED_ID : CONFIG.AD_INTERSTITIAL_ID;
     const handleEvent = (e) => {
       const t = typeof e === 'string' ? e : e?.type;
       if (t === 'loaded' || t === 'adLoaded') {
@@ -82,19 +131,20 @@ window.AIT = (() => {
     } catch (e) { console.warn('AIT ad preload failed:', e); }
   }
 
-  async function showAd(type = 'interstitial') {
+  async function showAd(type) {
     if (!isToss) { console.log(`[Mock] ${type} ad shown`); return { success: true, mock: true }; }
     if (!_adLoaded[type]) {
       preloadAd(type);
       await new Promise(r => setTimeout(r, 2000));
     }
-    const id = CONFIG.AD_INTERSTITIAL_ID;
+    const id = type === 'rewarded' ? CONFIG.AD_REWARDED_ID : CONFIG.AD_INTERSTITIAL_ID;
+    const timeout = type === 'rewarded' ? 120000 : 30000;
     return new Promise((resolve) => {
       let resolved = false;
       const done = (result) => { if (resolved) return; resolved = true; resolve(result); };
       const handleEvent = (event) => {
         const evtType = typeof event === 'string' ? event : event?.type;
-        if (evtType === 'dismissed' || evtType === 'adDismissed') {
+        if (evtType === 'userEarnedReward' || evtType === 'dismissed' || evtType === 'adDismissed') {
           _adLoaded[type] = false;
           preloadAd(type);
           done({ success: true, event: evtType });
@@ -108,10 +158,11 @@ window.AIT = (() => {
           _bridgeEvent('showAppsInTossAdMob', { options: { adGroupId: id }, onEvent: handleEvent, onError: handleError });
         }
       } catch (e) { done({ success: false, error: e }); }
-      setTimeout(() => done({ success: false, error: 'timeout' }), 30000);
+      setTimeout(() => done({ success: false, error: 'timeout' }), timeout);
     });
   }
 
+  // ── Banner Ad (TossAds SDK) ──
   let _tossAdsInitialized = false;
   let _tossAdsInitPromise = null;
   const _bannerHandles = new Map();
@@ -120,7 +171,9 @@ window.AIT = (() => {
   function _initTossAds() {
     if (_tossAdsInitialized) return Promise.resolve();
     if (_tossAdsInitPromise) return _tossAdsInitPromise;
-    if (!TossAds.initialize.isSupported()) return Promise.reject(new Error('TossAds not supported'));
+    if (!TossAds.initialize.isSupported()) {
+      return Promise.reject(new Error('TossAds not supported'));
+    }
     _tossAdsInitPromise = new Promise((resolve, reject) => {
       TossAds.initialize({
         callbacks: {
@@ -141,16 +194,24 @@ window.AIT = (() => {
   function loadBannerAd(containerId, opts = {}) {
     if (!isToss) {
       const el = document.getElementById(containerId);
-      if (el) { el.style.cssText += ';background:var(--tds-grey-200,#f2f4f6);display:flex;align-items:center;justify-content:center;color:var(--tds-grey-500,#8b95a1);font-size:12px;min-height:60px'; el.textContent = '광고 영역'; }
+      if (el) {
+        el.style.cssText += ';background:var(--tds-grey-200,#f2f4f6);display:flex;align-items:center;justify-content:center;color:var(--tds-grey-500,#8b95a1);font-size:12px;min-height:60px';
+        el.textContent = '광고 영역';
+      }
       return;
     }
     const el = document.getElementById(containerId);
     if (!el) return;
     if (_bannerHandles.has(containerId)) {
-      if (el.children.length === 0) { _bannerHandles.delete(containerId); } else { return; }
+      if (el.children.length === 0) _bannerHandles.delete(containerId);
+      else return;
     }
-    const adGroupId = opts.spaceId || CONFIG.AD_BANNER_ID;
+    const adGroupId = opts.spaceId || (opts.image ? CONFIG.AD_IMAGE_BANNER_ID : CONFIG.AD_BANNER_ID);
+    const theme = opts.theme || 'light';
+    const tone = opts.tone || 'blackAndWhite';
+    const variant = opts.variant || 'expanded';
     const retryCount = opts._retryCount || 0;
+
     const retryBanner = () => {
       if (retryCount < 3 && document.getElementById(containerId)) {
         const delay = (retryCount + 1) * 10000;
@@ -160,12 +221,11 @@ window.AIT = (() => {
         }, delay);
       }
     };
+
     _initTossAds().then(() => {
       if (!document.getElementById(containerId)) return;
       const handle = TossAds.attachBanner(adGroupId, el, {
-        theme: opts.theme || 'light',
-        tone: opts.tone || 'blackAndWhite',
-        variant: opts.variant || 'expanded',
+        theme, tone, variant,
         callbacks: {
           onAdRendered: () => { if (_bannerRetryTimers[containerId]) { clearTimeout(_bannerRetryTimers[containerId]); _bannerRetryTimers[containerId] = null; } },
           onAdFailedToRender: () => retryBanner(),
@@ -176,19 +236,23 @@ window.AIT = (() => {
     }).catch(() => retryBanner());
   }
 
+  // ── Haptic ──
   function haptic(type = 'light') {
     if (!isToss) return;
     try { _bridgeCall('generateHapticFeedback', [{ type }]); } catch (e) {}
   }
 
+  // ── Event Log ──
   async function log(name, params = {}) {
     if (!isToss) { console.log(`[AIT Log] ${name}`, params); return; }
     try { await _bridgeCall('eventLog', [{ log_name: name, params }]); } catch (e) {}
   }
 
+  // ── Init ──
   async function init() {
+    getUserHash();
     if (isToss) {
-      try { await _initTossAds(); } catch (e) {}
+      try { await _initTossAds(); } catch (e) { console.warn('[AIT] TossAds init failed:', e); }
       preloadAd('interstitial');
       log('app_open', { version: 'nyang2048-v1' });
     }
@@ -196,7 +260,10 @@ window.AIT = (() => {
 
   return {
     isToss, CONFIG,
-    showAd, preloadAd, loadBannerAd, destroyBannerAd,
+    getUserHash,
+    getTodayGameCount, incrementTodayGameCount,
+    showAd, preloadAd,
+    loadBannerAd, destroyBannerAd,
     haptic, log, init,
   };
 })();
