@@ -33,16 +33,42 @@ export function saveBestScore(stageId, score) {
 
 // ── Stage Unlock ──
 export function getUnlockedStage() {
-  if (DEBUG_MODE) return 20;
-  return parseInt(localStorage.getItem(STAGE_KEY) || '1', 10);
+  if (DEBUG_MODE) return '36-3';
+  const raw = localStorage.getItem(STAGE_KEY) || '1-1';
+  // Migrate legacy integer format
+  if (!raw.includes('-')) {
+    const migrated = `${raw}-1`;
+    localStorage.setItem(STAGE_KEY, migrated);
+    return migrated;
+  }
+  return raw;
 }
 
-export function unlockNextStage(current) {
+// currentId: "1-1" format
+export function unlockNextStage(currentId) {
+  const { stageNum, subNum } = parseStageIdLocal(currentId);
+
+  let nextStage = stageNum;
+  let nextSub = subNum + 1;
+  if (nextSub > 3) { nextStage = stageNum + 1; nextSub = 1; }
+  if (nextStage > 36) { unlockInfinite(); return; }
+
   const currentUnlocked = getUnlockedStage();
-  const next = typeof current === 'number' ? current + 1 : 2;
-  if (next > currentUnlocked && next <= 20) {
-    localStorage.setItem(STAGE_KEY, String(next));
+  const { stageNum: cStage, subNum: cSub } = parseStageIdLocal(currentUnlocked);
+
+  // Only advance if next is further than current
+  if (nextStage > cStage || (nextStage === cStage && nextSub > cSub)) {
+    localStorage.setItem(STAGE_KEY, `${nextStage}-${nextSub}`);
   }
+}
+
+function parseStageIdLocal(id) {
+  const s = String(id);
+  if (s.includes('-')) {
+    const [stageNum, subNum] = s.split('-').map(Number);
+    return { stageNum, subNum };
+  }
+  return { stageNum: parseInt(s, 10), subNum: 1 };
 }
 
 export function isInfiniteUnlocked() {
@@ -125,23 +151,6 @@ export function saveBestTime(stageId, seconds) {
     }
     return false;
   } catch { return false; }
-}
-
-// ── Stage Medals ──
-export function saveMedal(stageId, medal) {
-  // medal: 'bronze' | 'silver' | 'gold'
-  // Only upgrade, never downgrade
-  const key = `medal_${stageId}`;
-  const current = localStorage.getItem(key);
-  const rank = { bronze: 1, silver: 2, gold: 3 };
-  if (!current || rank[medal] > rank[current]) {
-    localStorage.setItem(key, medal);
-  }
-}
-
-export function getMedal(stageId) {
-  // Returns 'bronze' | 'silver' | 'gold' | null
-  return localStorage.getItem(`medal_${stageId}`);
 }
 
 // ── Board Auto-save ──
