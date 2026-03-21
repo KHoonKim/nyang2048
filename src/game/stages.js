@@ -8,28 +8,44 @@ export const COMMON_CATS = {
   32: 'ragdoll',
 };
 
-// Stage cat maps: value → catId (2 cats per stage)
-// Arranged by popularity/familiarity: well-known breeds early, rare/exotic breeds late
-const S1  = { 64: 'scottish' }; // 스코티시폴드 (봄베이/벵갈/렉돌은 공통)
-const S2  = { 64: 'persian',       128: 'munchkin' };       // 페르시안, 먼치킨
-const S3  = { 256: 'british' };                              // 브리티시숏헤어 (128은 filler 페르시안)
-const S4  = { 128: 'american-sh' };                          // 아메리칸숏헤어 (64는 filler 스코티시폴드)
-const S5  = { 128: 'siamese',      256: 'norwegian' };      // 샴, 노르웨이숲
-const S6  = { 256: 'burmese',      512: 'exotic-sh' };      // 버미즈, 엑조틱숏헤어
-const S7  = { 256: 'turkish-angora', 512: 'abyssinian' };   // 터키시앙고라, 아비시니안
-const S8  = { 512: 'himalayan',   1024: 'havana-brown' };   // 히말라얀(컬러포인트), 하바나브라운(초콜릿 솔리드)
-const S9  = { 512: 'somali',      1024: 'balinese' };       // 소말리, 발리니즈 — 완충 구간
-const S10 = { 128: 'mainecoon',    256: 'oriental-sh' };    // 메인쿤, 오리엔탈숏헤어 — 4×3 첫 등장
-const S11 = { 1024: 'egyptian-mau', 2048: 'japanese-bt' };  // 이집션마우, 재패니즈밥테일
-const S12 = { 256: 'devon-rex',    512: 'chartreux' };      // 데본렉스(얇고 주름), 샤르트뢰(블루그레이)
-const S13 = { 1024: 'cornish-rex', 2048: 'savannah' };      // 코니시렉스(곱슬), 사바나
-const S14 = { 512: 'manx',        1024: 'american-curl' };  // 맹크스, 아메리칸컬
-const S15 = { 1024: 'toyger',     2048: 'turkish-van' };    // 토이거(오렌지 호랑이), 터키시반(흰색)
-const S16 = { 2048: 'ocicat',     4096: 'singapura' };      // 옥시캣, 싱가퓨라 — 희소 품종
-const S17 = { 64: 'sphynx',       128: 'selkirk-rex' };     // 스핑크스, 셀커크렉스 — 극한 외모
-const S18 = { 128: 'korat',       256: 'birman' };          // 코랏(블루그레이), 버만(컬러포인트+흰발 — 색 대비)
-const S19 = { 2048: 'pixiebob',   4096: 'tonkinese' };      // 픽시밥, 통키니즈 — 장기전
-const S20 = { 8192: 'nebelung' };                            // 네벨룽 — 최종 보스 (4096은 filler 치즈태비)
+// Stage cat maps: value → catId (1 cat per stage)
+// Stages 1-11: Rare | 12-27: Epic | 28-36: Legendary
+const S1  = { 64:   'scottish' };
+const S2  = { 64:   'persian' };
+const S3  = { 128:  'munchkin' };
+const S4  = { 256:  'british' };
+const S5  = { 128:  'american-sh' };
+const S6  = { 128:  'siamese' };
+const S7  = { 256:  'norwegian' };
+const S8  = { 256:  'burmese' };
+const S9  = { 512:  'exotic-sh' };
+const S10 = { 256:  'turkish-angora' };
+const S11 = { 512:  'abyssinian' };
+const S12 = { 512:  'himalayan' };
+const S13 = { 1024: 'havana-brown' };
+const S14 = { 512:  'somali' };
+const S15 = { 1024: 'balinese' };
+const S16 = { 128:  'mainecoon' };
+const S17 = { 256:  'oriental-sh' };
+const S18 = { 1024: 'egyptian-mau' };
+const S19 = { 2048: 'japanese-bt' };
+const S20 = { 256:  'devon-rex' };
+const S21 = { 512:  'chartreux' };
+const S22 = { 1024: 'cornish-rex' };
+const S23 = { 2048: 'savannah' };
+const S24 = { 512:  'manx' };
+const S25 = { 1024: 'american-curl' };
+const S26 = { 1024: 'toyger' };
+const S27 = { 2048: 'turkish-van' };
+const S28 = { 2048: 'ocicat' };
+const S29 = { 4096: 'singapura' };
+const S30 = { 64:   'sphynx' };
+const S31 = { 128:  'selkirk-rex' };
+const S32 = { 128:  'korat' };
+const S33 = { 256:  'birman' };
+const S34 = { 2048: 'pixiebob' };
+const S35 = { 4096: 'tonkinese' };
+const S36 = { 8192: 'nebelung' };
 
 export const INFINITE_CATS = {
   4096: 'tonkinese',
@@ -50,9 +66,7 @@ const FILLER_CATS = {
 };
 
 // Per-stage overrides when default filler conflicts with stage's collectible breed
-const FILLER_OVERRIDES = {
-  3: { 128: 'persian' },  // S3: 페르시안 filler (기본 munchkin 대신)
-};
+const FILLER_OVERRIDES = {};
 
 export const CAT_NAMES = {
   korean: '코리안숏헤어',
@@ -98,24 +112,23 @@ export const CAT_NAMES = {
   nebelung: '네벨룽',
 };
 
-// 타일 값 기준 희귀도: Common(2-32), Rare(64-256), Epic(512-2048), Legendary(4096+)
+// 스테이지 기준 희귀도: Common(기본 타일), Rare(S1-S7), Epic(S8-S15), Legendary(S16-S20)
 export const CAT_RARITY = {
-  // Common (타일 2-32)
+  // Common (기본 합성 타일)
   korean: 'common', russian: 'common', bombay: 'common', bengal: 'common', ragdoll: 'common',
-  // Rare (타일 64-256)
+  // Rare (S1-S7)
   scottish: 'rare', persian: 'rare', munchkin: 'rare', british: 'rare',
   'american-sh': 'rare', siamese: 'rare', norwegian: 'rare', burmese: 'rare',
-  'turkish-angora': 'rare', mainecoon: 'rare', 'oriental-sh': 'rare',
-  'devon-rex': 'rare', birman: 'rare', korat: 'rare', sphynx: 'rare',
-  'selkirk-rex': 'rare',
-  // Epic (타일 512-2048)
-  'exotic-sh': 'epic', abyssinian: 'epic', himalayan: 'epic', 'havana-brown': 'epic',
-  somali: 'epic', balinese: 'epic', 'egyptian-mau': 'epic', 'japanese-bt': 'epic',
-  chartreux: 'epic', 'cornish-rex': 'epic', savannah: 'epic', manx: 'epic',
-  'american-curl': 'epic', toyger: 'epic', 'turkish-van': 'epic', ocicat: 'epic',
-  pixiebob: 'epic',
-  // Legendary (타일 4096+)
-  singapura: 'legendary', tonkinese: 'legendary', nebelung: 'legendary',
+  'exotic-sh': 'rare', 'turkish-angora': 'rare', abyssinian: 'rare',
+  // Epic (S8-S15)
+  himalayan: 'epic', 'havana-brown': 'epic', somali: 'epic', balinese: 'epic',
+  mainecoon: 'epic', 'oriental-sh': 'epic', 'egyptian-mau': 'epic', 'japanese-bt': 'epic',
+  'devon-rex': 'epic', chartreux: 'epic', 'cornish-rex': 'epic', savannah: 'epic',
+  manx: 'epic', 'american-curl': 'epic', toyger: 'epic', 'turkish-van': 'epic',
+  // Legendary (S16-S20)
+  ocicat: 'legendary', singapura: 'legendary', sphynx: 'legendary', 'selkirk-rex': 'legendary',
+  korat: 'legendary', birman: 'legendary', pixiebob: 'legendary', tonkinese: 'legendary',
+  nebelung: 'legendary',
 };
 
 export const CAT_TRAITS = {
@@ -163,60 +176,57 @@ export const CAT_TRAITS = {
 };
 
 export const STAGES = {
+  // ── Rare (1–11) ──
   1:  { id: 1,  rows: 5, cols: 5, size: 5, goal: 64,   initialTiles: 3, cats: S1,  boardLabel: '5×5', difficulty: 1 },
-  2:  { id: 2,  rows: 5, cols: 5, size: 5, goal: 128,  initialTiles: 3, cats: S2,  boardLabel: '5×5', difficulty: 1 },
-  3:  { id: 3,  rows: 5, cols: 5, size: 5, goal: 256,  initialTiles: 3, cats: S3,  boardLabel: '5×5', difficulty: 2 },
-  4:  { id: 4,  rows: 4, cols: 4, size: 4, goal: 128,  initialTiles: 2, cats: S4,  boardLabel: '4×4', difficulty: 2 },
-  5:  { id: 5,  rows: 4, cols: 4, size: 4, goal: 256,  initialTiles: 2, cats: S5,  boardLabel: '4×4', difficulty: 2 },
-  6:  { id: 6,  rows: 5, cols: 5, size: 5, goal: 512,  initialTiles: 3, cats: S6,  boardLabel: '5×5', difficulty: 2 },
-  7:  { id: 7,  rows: 4, cols: 4, size: 4, goal: 512,  initialTiles: 2, cats: S7,  boardLabel: '4×4', difficulty: 3 },
-  8:  { id: 8,  rows: 4, cols: 4, size: 4, goal: 1024, initialTiles: 2, cats: S8,  boardLabel: '4×4', difficulty: 3 },
-  9:  { id: 9,  rows: 5, cols: 5, size: 5, goal: 1024, initialTiles: 3, cats: S9,  boardLabel: '5×5', difficulty: 3 },
-  10: { id: 10, rows: 3, cols: 4, size: 3, goal: 256,  initialTiles: 2, cats: S10, boardLabel: '4×3', difficulty: 3 },
-  11: { id: 11, rows: 4, cols: 4, size: 4, goal: 2048, initialTiles: 2, cats: S11, boardLabel: '4×4', difficulty: 4 },
-  12: { id: 12, rows: 3, cols: 4, size: 3, goal: 512,  initialTiles: 2, cats: S12, boardLabel: '4×3', difficulty: 4 },
-  13: { id: 13, rows: 5, cols: 5, size: 5, goal: 2048, initialTiles: 3, cats: S13, boardLabel: '5×5', difficulty: 4 },
-  14: { id: 14, rows: 3, cols: 4, size: 3, goal: 1024, initialTiles: 2, cats: S14, boardLabel: '4×3', difficulty: 4 },
-  15: { id: 15, rows: 6, cols: 6, size: 6, goal: 2048, initialTiles: 3, cats: S15, boardLabel: '6×6', difficulty: 4 },
-  16: { id: 16, rows: 6, cols: 6, size: 6, goal: 4096, initialTiles: 3, cats: S16, boardLabel: '6×6', difficulty: 5 },
-  17: { id: 17, rows: 3, cols: 3, size: 3, goal: 128,  initialTiles: 2, cats: S17, boardLabel: '3×3', difficulty: 5 },
-  18: { id: 18, rows: 3, cols: 3, size: 3, goal: 256,  initialTiles: 2, cats: S18, boardLabel: '3×3', difficulty: 5 },
-  19: { id: 19, rows: 7, cols: 7, size: 7, goal: 4096, initialTiles: 4, cats: S19, boardLabel: '7×7', difficulty: 5 },
-  20: { id: 20, rows: 8, cols: 8, size: 8, goal: 8192, initialTiles: 4, cats: S20, boardLabel: '8×8', difficulty: 5 },
-  infinite: { id: 'infinite', rows: null, cols: null, size: null, goal: null, initialTiles: 2, cats: S20, boardLabel: '∞', difficulty: 0 },
+  2:  { id: 2,  rows: 5, cols: 5, size: 5, goal: 64,   initialTiles: 3, cats: S2,  boardLabel: '5×5', difficulty: 1 },
+  3:  { id: 3,  rows: 5, cols: 5, size: 5, goal: 128,  initialTiles: 3, cats: S3,  boardLabel: '5×5', difficulty: 1 },
+  4:  { id: 4,  rows: 5, cols: 5, size: 5, goal: 256,  initialTiles: 3, cats: S4,  boardLabel: '5×5', difficulty: 2 },
+  5:  { id: 5,  rows: 4, cols: 4, size: 4, goal: 128,  initialTiles: 2, cats: S5,  boardLabel: '4×4', difficulty: 2 },
+  6:  { id: 6,  rows: 4, cols: 4, size: 4, goal: 128,  initialTiles: 2, cats: S6,  boardLabel: '4×4', difficulty: 2 },
+  7:  { id: 7,  rows: 4, cols: 4, size: 4, goal: 256,  initialTiles: 2, cats: S7,  boardLabel: '4×4', difficulty: 2 },
+  8:  { id: 8,  rows: 5, cols: 5, size: 5, goal: 256,  initialTiles: 3, cats: S8,  boardLabel: '5×5', difficulty: 2 },
+  9:  { id: 9,  rows: 5, cols: 5, size: 5, goal: 512,  initialTiles: 3, cats: S9,  boardLabel: '5×5', difficulty: 2 },
+  10: { id: 10, rows: 4, cols: 4, size: 4, goal: 256,  initialTiles: 2, cats: S10, boardLabel: '4×4', difficulty: 3 },
+  11: { id: 11, rows: 4, cols: 4, size: 4, goal: 512,  initialTiles: 2, cats: S11, boardLabel: '4×4', difficulty: 3 },
+  // ── Epic (12–27) ──
+  12: { id: 12, rows: 4, cols: 4, size: 4, goal: 512,  initialTiles: 2, cats: S12, boardLabel: '4×4', difficulty: 3 },
+  13: { id: 13, rows: 4, cols: 4, size: 4, goal: 1024, initialTiles: 2, cats: S13, boardLabel: '4×4', difficulty: 3 },
+  14: { id: 14, rows: 5, cols: 5, size: 5, goal: 512,  initialTiles: 3, cats: S14, boardLabel: '5×5', difficulty: 3 },
+  15: { id: 15, rows: 5, cols: 5, size: 5, goal: 1024, initialTiles: 3, cats: S15, boardLabel: '5×5', difficulty: 3 },
+  16: { id: 16, rows: 3, cols: 4, size: 3, goal: 128,  initialTiles: 2, cats: S16, boardLabel: '4×3', difficulty: 3 },
+  17: { id: 17, rows: 3, cols: 4, size: 3, goal: 256,  initialTiles: 2, cats: S17, boardLabel: '4×3', difficulty: 3 },
+  18: { id: 18, rows: 4, cols: 4, size: 4, goal: 1024, initialTiles: 2, cats: S18, boardLabel: '4×4', difficulty: 4 },
+  19: { id: 19, rows: 4, cols: 4, size: 4, goal: 2048, initialTiles: 2, cats: S19, boardLabel: '4×4', difficulty: 4 },
+  20: { id: 20, rows: 3, cols: 4, size: 3, goal: 256,  initialTiles: 2, cats: S20, boardLabel: '4×3', difficulty: 4 },
+  21: { id: 21, rows: 3, cols: 4, size: 3, goal: 512,  initialTiles: 2, cats: S21, boardLabel: '4×3', difficulty: 4 },
+  22: { id: 22, rows: 5, cols: 5, size: 5, goal: 1024, initialTiles: 3, cats: S22, boardLabel: '5×5', difficulty: 4 },
+  23: { id: 23, rows: 5, cols: 5, size: 5, goal: 2048, initialTiles: 3, cats: S23, boardLabel: '5×5', difficulty: 4 },
+  24: { id: 24, rows: 3, cols: 4, size: 3, goal: 512,  initialTiles: 2, cats: S24, boardLabel: '4×3', difficulty: 4 },
+  25: { id: 25, rows: 3, cols: 4, size: 3, goal: 1024, initialTiles: 2, cats: S25, boardLabel: '4×3', difficulty: 4 },
+  26: { id: 26, rows: 6, cols: 6, size: 6, goal: 1024, initialTiles: 3, cats: S26, boardLabel: '6×6', difficulty: 4 },
+  27: { id: 27, rows: 6, cols: 6, size: 6, goal: 2048, initialTiles: 3, cats: S27, boardLabel: '6×6', difficulty: 4 },
+  // ── Legendary (28–36) ──
+  28: { id: 28, rows: 6, cols: 6, size: 6, goal: 2048, initialTiles: 3, cats: S28, boardLabel: '6×6', difficulty: 5 },
+  29: { id: 29, rows: 6, cols: 6, size: 6, goal: 4096, initialTiles: 3, cats: S29, boardLabel: '6×6', difficulty: 5 },
+  30: { id: 30, rows: 3, cols: 3, size: 3, goal: 64,   initialTiles: 2, cats: S30, boardLabel: '3×3', difficulty: 5 },
+  31: { id: 31, rows: 3, cols: 3, size: 3, goal: 128,  initialTiles: 2, cats: S31, boardLabel: '3×3', difficulty: 5 },
+  32: { id: 32, rows: 3, cols: 3, size: 3, goal: 128,  initialTiles: 2, cats: S32, boardLabel: '3×3', difficulty: 5 },
+  33: { id: 33, rows: 3, cols: 3, size: 3, goal: 256,  initialTiles: 2, cats: S33, boardLabel: '3×3', difficulty: 5 },
+  34: { id: 34, rows: 7, cols: 7, size: 7, goal: 2048, initialTiles: 4, cats: S34, boardLabel: '7×7', difficulty: 5 },
+  35: { id: 35, rows: 7, cols: 7, size: 7, goal: 4096, initialTiles: 4, cats: S35, boardLabel: '7×7', difficulty: 5 },
+  36: { id: 36, rows: 8, cols: 8, size: 8, goal: 8192, initialTiles: 4, cats: S36, boardLabel: '8×8', difficulty: 5 },
+  infinite: { id: 'infinite', rows: null, cols: null, size: null, goal: null, initialTiles: 2, cats: S36, boardLabel: '∞', difficulty: 0 },
 };
 
 // Medal score thresholds per stage
 // Bronze: stage clear (any score)
 // Silver: clear + score >= silver
 // Gold:   clear + score >= gold
-export const STAGE_MEDAL_TARGETS = {
-  1:  { silver:  2000, gold:   5000 },  // 5×5, goal 64
-  2:  { silver:  3000, gold:   8000 },  // 5×5, goal 128
-  3:  { silver:  6000, gold:  15000 },  // 5×5, goal 256
-  4:  { silver:  4000, gold:  10000 },  // 4×4, goal 128
-  5:  { silver:  8000, gold:  20000 },  // 4×4, goal 256
-  6:  { silver: 15000, gold:  35000 },  // 5×5, goal 512
-  7:  { silver: 12000, gold:  30000 },  // 4×4, goal 512
-  8:  { silver: 25000, gold:  60000 },  // 4×4, goal 1024
-  9:  { silver: 30000, gold:  70000 },  // 5×5, goal 1024
-  10: { silver:  6000, gold:  15000 },  // 4×3, goal 256
-  11: { silver: 50000, gold: 120000 },  // 4×4, goal 2048
-  12: { silver: 12000, gold:  28000 },  // 4×3, goal 512
-  13: { silver: 60000, gold: 150000 },  // 5×5, goal 2048
-  14: { silver: 20000, gold:  50000 },  // 4×3, goal 1024
-  15: { silver: 70000, gold: 180000 },  // 6×6, goal 2048
-  16: { silver: 100000, gold: 250000 }, // 6×6, goal 4096
-  17: { silver:  1500, gold:   4000 },  // 3×3, goal 128
-  18: { silver:  3000, gold:   8000 },  // 3×3, goal 256
-  19: { silver: 120000, gold: 300000 }, // 7×7, goal 4096
-  20: { silver: 200000, gold: 500000 }, // 8×8, goal 8192
-};
 
 // Ordered list of all cats with their stage context
 export const ALL_CATS_ORDERED = [
   ...Object.values(COMMON_CATS).map(id => ({ id, stage: 'common' })),
-  ...[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].flatMap(n =>
+  ...Array.from({ length: 36 }, (_, i) => i + 1).flatMap(n =>
     Object.values(STAGES[n].cats).map(id => ({ id, stage: n }))
   ),
 ];
@@ -270,4 +280,82 @@ export function getAllCatsForStage(stageId) {
     }
   }
   return result;
+}
+
+// ── Sub-stage system ──
+
+export const BOARD_LADDER = [
+  { rows: 3, cols: 3, boardLabel: '3×3' },
+  { rows: 3, cols: 4, boardLabel: '4×3' },
+  { rows: 4, cols: 4, boardLabel: '4×4' },
+  { rows: 5, cols: 5, boardLabel: '5×5' },
+  { rows: 6, cols: 6, boardLabel: '6×6' },
+  { rows: 7, cols: 7, boardLabel: '7×7' },
+  { rows: 8, cols: 8, boardLabel: '8×8' },
+];
+
+function getBoardLadderIndex(rows, cols) {
+  return BOARD_LADDER.findIndex(b => b.rows === rows && b.cols === cols);
+}
+
+function getInitialTilesForBoard(rows, cols) {
+  const cells = rows * cols;
+  if (cells <= 16) return 2;   // 3×3, 4×3, 4×4
+  if (cells <= 36) return 3;   // 5×5, 6×6
+  return 4;                    // 7×7, 8×8
+}
+
+// Parse "1-1" → { stageNum: 1, subNum: 1 }
+// Handles legacy integer format: "5" → { stageNum: 5, subNum: 1 }
+export function parseStageId(id) {
+  const s = String(id);
+  if (s.includes('-')) {
+    const [stageNum, subNum] = s.split('-').map(Number);
+    return { stageNum, subNum };
+  }
+  return { stageNum: parseInt(s, 10), subNum: 1 };
+}
+
+export function formatStageId(stageNum, subNum) {
+  return `${stageNum}-${subNum}`;
+}
+
+// Returns config for a specific sub-stage.
+// subNum: 1 (easiest, large board), 2 (medium), 3 (hardest = current stage config)
+export function getSubStageConfig(stageNum, subNum) {
+  const base = STAGES[stageNum];
+  if (!base) return null;
+
+  const catLineup = getStageCatLineup(stageNum); // sorted by tile value ascending
+  const N = catLineup.length;
+
+  const stepsUp = 3 - subNum; // X-1: 2 steps, X-2: 1 step, X-3: 0 steps
+
+  const baseIdx = getBoardLadderIndex(base.rows, base.cols);
+  if (baseIdx === -1) return { ...base, boardKey: formatStageId(stageNum, subNum), stageNum, subNum };
+  const maxIdx = BOARD_LADDER.length - 1;
+
+  const targetIdx = Math.min(baseIdx + stepsUp, maxIdx);
+  const boardOverflow = Math.max(0, (baseIdx + stepsUp) - maxIdx);
+
+  const newBoard = BOARD_LADDER[targetIdx];
+
+  // Cat count reduction when board size is capped
+  let goal = base.goal;
+  if (boardOverflow > 0) {
+    const targetCatIdx = N - 1 - boardOverflow;
+    if (targetCatIdx >= 0) goal = catLineup[targetCatIdx].value;
+  }
+
+  return {
+    ...base,
+    rows: newBoard.rows,
+    cols: newBoard.cols,
+    boardLabel: newBoard.boardLabel,
+    goal,
+    initialTiles: getInitialTilesForBoard(newBoard.rows, newBoard.cols),
+    boardKey: formatStageId(stageNum, subNum),
+    stageNum,
+    subNum,
+  };
 }
