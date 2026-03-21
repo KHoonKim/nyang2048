@@ -1,14 +1,13 @@
 import { Board } from '../game/board.js';
 import { Renderer } from '../game/renderer.js';
 import { attachSwipeListener } from '../game/input.js';
-import { getCatForValue, STAGES, CAT_NAMES, getCatImage, getStageCatLineup, STAGE_MEDAL_TARGETS } from '../game/stages.js';
+import { getCatForValue, STAGES, CAT_NAMES, getCatImage, getStageCatLineup, getSubStageConfig, parseStageId } from '../game/stages.js';
 import {
   addToCollection, COLLECTION_MAX,
   getBestScore, getBestTime,
   saveBestScore, saveBestTime,
   saveBoard, loadBoard, clearBoard,
   unlockNextStage, unlockInfinite, isInfiniteUnlocked,
-  saveMedal
 } from '../game/score.js';
 import { navigate, getHashParams } from '../core/router.js';
 import { ICON } from '../core/icons.js';
@@ -43,24 +42,34 @@ export function renderPlay() {
   }
 
   const params = getHashParams();
-  const stageId = params.infinite
-    ? 'infinite'
-    : parseInt(params.stage || '1', 10);
-  const infiniteSize = params.infinite ? parseInt(params.infinite, 10) : null;
+  const isInfinite = !!params.infinite;
+  const infiniteSize = isInfinite ? parseInt(params.infinite, 10) : null;
+  const rawStageParam = params.stage || '1-1';
+  const stageId = isInfinite ? 'infinite' : rawStageParam; // e.g. "3-2"
+  const { stageNum, subNum } = isInfinite ? { stageNum: null, subNum: null } : parseStageId(stageId);
 
-  const stage = stageId === 'infinite'
+  const stage = isInfinite
     ? { ...STAGES.infinite, rows: infiniteSize || 4, cols: infiniteSize || 4, size: infiniteSize || 4, boardKey: `inf_${infiniteSize || 4}` }
-    : { ...STAGES[stageId], boardKey: stageId };
+    : getSubStageConfig(stageNum, subNum);
 
   if (!stage) { navigate('home'); return; }
 
   const app = document.getElementById('app');
 
   // Build full cat lineup for this stage (common + filler + collectible)
-  const allStageCats = stageId !== 'infinite'
-    ? getStageCatLineup(stageId)
+  const allStageCats = !isInfinite
+    ? getStageCatLineup(stageNum).filter(({ value }) => value <= stage.goal)
     : [];
   const collectibleCatIds = new Set(stage.cats ? Object.values(stage.cats) : []);
+
+  // Set of all stage goal cat IDs — only collectable in their own stage X-3
+  const ALL_STAGE_GOAL_CATS = new Set(
+    Object.values(STAGES)
+      .filter(s => s.id !== 'infinite')
+      .flatMap(s => Object.values(s.cats || {}))
+  );
+  // This stage's own goal cat (the cat at the goal tile value for this sub-stage)
+  const ownGoalCatId = !isInfinite && stage.cats ? (stage.cats[stage.goal] || null) : null;
 
   function renderCatLineup() {
     if (allStageCats.length === 0) return '';
@@ -200,7 +209,8 @@ export function renderPlay() {
     addToCollection('russian');
   }
 
-  let renderer = new Renderer(boardContainer, stage.rows, stage.cols, stageId);
+  const rendererStageId = isInfinite ? 'infinite' : stageNum;
+  let renderer = new Renderer(boardContainer, stage.rows, stage.cols, rendererStageId);
   let history = []; // stack of snapshots for consecutive undo
   let goalReached = false;
   let splashShowing = false;
@@ -358,19 +368,31 @@ export function renderPlay() {
       seen.add(m.newId);
       const mergedValue = board.grid[m.toR][m.toC];
       if (mergedValue <= 4) continue;
-      const catId = getCatForValue(stageId, mergedValue);
+      const catId = getCatForValue(rendererStageId, mergedValue);
       if (!catId) continue;
       // Reveal in lineup (all cats)
       if (!discoveredThisGame.has(catId)) {
         discoveredThisGame.add(catId);
         updateCatLineup();
       }
-      // Collection: any discovered cat counts, once per cat per play
+      // Collection: once per cat per play, with goal-cat restrictions
       if (!collectedThisGame.has(catId)) {
-        collectedThisGame.add(catId);
-        const count = addToCollection(catId);
-        if (count > 0) newCatFinds.push({ catId, count });
-        if (count === 1) firstFoundThisGame.add(catId);
+        if (ALL_STAGE_GOAL_CATS.has(catId)) {
+          // Stage goal cats: only collectable in their own stage X-3
+          if (!isInfinite && catId === ownGoalCatId && subNum === 3) {
+            collectedThisGame.add(catId);
+            const count = addToCollection(catId);
+            if (count > 0) newCatFinds.push({ catId, count });
+            if (count === 1) firstFoundThisGame.add(catId);
+          }
+          // else: skip — not allowed to collect this stage goal cat here
+        } else {
+          // Common cats (korean, russian, etc.): always collectable
+          collectedThisGame.add(catId);
+          const count = addToCollection(catId);
+          if (count > 0) newCatFinds.push({ catId, count });
+          if (count === 1) firstFoundThisGame.add(catId);
+        }
       }
     }
 
@@ -409,9 +431,9 @@ export function renderPlay() {
 
     const continueGame = () => {
       // Check win
-      if (stageId !== 'infinite' && !goalReached && stage.goal && board.hasValue(stage.goal)) {
+      if (!isInfinite && !goalReached && stage.goal && board.hasValue(stage.goal)) {
         goalReached = true;
-        const goalCatId = getCatForValue(stageId, stage.goal);
+        const goalCatId = getCatForValue(stageNum, stage.goal);
         if (goalCatId) {
           showLastCatOverlay(goalCatId, () => handleWin());
         } else {
@@ -441,14 +463,6 @@ export function renderPlay() {
     }
   }
 
-  function calcMedal(stageId, score) {
-    const targets = STAGE_MEDAL_TARGETS[stageId];
-    if (!targets) return 'bronze';
-    if (score >= targets.gold) return 'gold';
-    if (score >= targets.silver) return 'silver';
-    return 'bronze';
-  }
-
   function handleWin() {
     stopTimer();
     backGuardActive = false;
@@ -456,15 +470,11 @@ export function renderPlay() {
     saveBestScore(stage.boardKey, currentScore);
     saveBestTime(stage.boardKey, elapsedSeconds);
     clearBoard(stage.boardKey);
-    if (typeof stageId === 'number') {
-      unlockNextStage(stageId);
-      if (stageId === 20) unlockInfinite();
-      const medal = calcMedal(stageId, currentScore);
-      saveMedal(stageId, medal);
+    if (!isInfinite) {
+      unlockNextStage(stageId); // stageId is "3-2" format, unlockNextStage handles it
     }
-    const medal = typeof stageId === 'number' ? calcMedal(stageId, currentScore) : null;
     const cats = [...firstFoundThisGame].join(',');
-    navigate(`result?stage=${stageId}&score=${currentScore}&clear=1&time=${elapsedSeconds}${cats ? '&cats=' + cats : ''}${medal ? '&medal=' + medal : ''}`);
+    navigate(`result?stage=${stageId}&score=${currentScore}&clear=1&time=${elapsedSeconds}${cats ? '&cats=' + cats : ''}`);
   }
 
   function handleGameOver() {
@@ -595,7 +605,7 @@ export function renderPlay() {
       stopTimer();
       elapsedSeconds = 0;
       renderer.destroy();
-      renderer = new Renderer(boardContainer, stage.rows, stage.cols, stageId);
+      renderer = new Renderer(boardContainer, stage.rows, stage.cols, rendererStageId);
       requestAnimationFrame(() => doRender());
       startTimer();
     });
@@ -615,13 +625,13 @@ export function renderPlay() {
   const playHash = window.location.hash;
 
   // Push a guard entry so back button pops this instead of leaving
-  history.pushState({ nyang2048Guard: true }, '', playHash);
+  window.history.pushState({ nyang2048Guard: true }, '', playHash);
 
   const onPopState = () => {
     if (!backGuardActive) return;
     if (splashShowing) {
       // Re-push guard and ignore
-      history.pushState({ nyang2048Guard: true }, '', playHash);
+      window.history.pushState({ nyang2048Guard: true }, '', playHash);
       return;
     }
     // Show confirm modal with custom back-button behavior
@@ -644,7 +654,7 @@ export function renderPlay() {
       overlay.classList.remove('exit-confirm--visible');
       setTimeout(() => overlay.remove(), 200);
       // Re-push guard for next back press
-      history.pushState({ nyang2048Guard: true }, '', playHash);
+      window.history.pushState({ nyang2048Guard: true }, '', playHash);
     };
 
     overlay.querySelector('.exit-confirm-no').addEventListener('click', dismiss);
