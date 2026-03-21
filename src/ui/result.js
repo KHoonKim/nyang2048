@@ -1,12 +1,14 @@
 import { navigate, getHashParams } from '../core/router.js';
-import { getBestScore, getBestTime, getMedal } from '../game/score.js';
-import { getCatImage, CAT_NAMES, STAGES } from '../game/stages.js';
+import { getBestScore, getBestTime } from '../game/score.js';
+import { getCatImage, CAT_NAMES, STAGES, parseStageId, getSubStageConfig } from '../game/stages.js';
 
 export function renderResult() {
   const params = getHashParams();
   const isInfinite = !!params.infinite;
-  const stageId = isInfinite ? 'infinite' : parseInt(params.stage || '1', 10);
   const infiniteSize = isInfinite ? parseInt(params.infinite, 10) : null;
+  const rawStage = params.stage || '1-1';
+  const stageId = isInfinite ? 'infinite' : rawStage; // e.g. "3-2"
+  const { stageNum, subNum } = isInfinite ? { stageNum: null, subNum: null } : parseStageId(stageId);
   const score = parseInt(params.score || '0', 10);
   const isClear = params.clear === '1';
 
@@ -20,22 +22,13 @@ export function renderResult() {
   const elapsedSec = elapsedSeconds % 60;
   const elapsedStr = `${elapsedMin}:${elapsedSec.toString().padStart(2, '0')}`;
 
-  const medalParam = params.medal;
-  const medalEmojiMap = { gold: '🥇', silver: '🥈', bronze: '🥉' };
-  const medalLabelMap = { gold: '골드 메달 획득!', silver: '실버 메달 획득!', bronze: '브론즈 메달 획득!' };
-  const medalHtml = (!isInfinite && medalParam && medalEmojiMap[medalParam]) ? `
-    <div class="result-medal">
-      <div class="result-medal__emoji">${medalEmojiMap[medalParam]}</div>
-      <div class="result-medal__label">${medalLabelMap[medalParam]}</div>
-    </div>
-  ` : '';
 
   // Discovered cats from this play session
   const discoveredCats = params.cats ? params.cats.split(',').filter(Boolean) : [];
 
   const stageLabel = isInfinite
     ? `무한모드 ${infiniteSize}×${infiniteSize}`
-    : `Stage ${stageId}`;
+    : `Stage ${stageNum}-${subNum}`;
 
   function spawnConfetti() {
     const colors = ['#FF6B35', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6', '#e74c3c'];
@@ -79,7 +72,7 @@ export function renderResult() {
       <div class="result-screen">
         <div class="result-emoji">🎉</div>
         <div class="result-title result-title--clear">${stageLabel} 클리어!</div>
-        ${medalHtml}
+
         <div class="play-header">
           <div class="play-header__block">
             <div class="play-header__current">
@@ -104,12 +97,17 @@ export function renderResult() {
         </div>
         ${newCatHtml}
         <div class="result-buttons">
-          ${!isInfinite && STAGES[stageId + 1] ? `
-          <button class="tds-btn result-btn-brand tds-btn-xl tds-btn-block" id="next-stage-btn">
-            다음 스테이지로
-          </button>` : ''}
+          ${(() => {
+            if (isInfinite) return '';
+            const hasNextStage = subNum < 3 || stageNum < 36;
+            if (!hasNextStage) return '';
+            const nextSubLabel = subNum < 3
+              ? `${stageNum}-${subNum + 1} 도전`
+              : `${stageNum + 1}-1 도전`;
+            return `<button class="tds-btn result-btn-brand tds-btn-xl tds-btn-block" id="next-stage-btn">${nextSubLabel}</button>`;
+          })()}
           <div class="result-buttons-row">
-            <button class="tds-btn ${!isInfinite && STAGES[stageId + 1] ? 'tds-btn-light' : 'tds-btn-primary'} tds-btn-xl tds-btn-half" id="replay-btn">
+            <button class="tds-btn ${!isInfinite && (subNum < 3 || stageNum < 36) ? 'tds-btn-light' : 'tds-btn-primary'} tds-btn-xl tds-btn-half" id="replay-btn">
               다시 플레이
             </button>
             <button class="tds-btn tds-btn-light tds-btn-xl tds-btn-half" id="home-btn">
@@ -127,7 +125,10 @@ export function renderResult() {
     const nextBtn = document.getElementById('next-stage-btn');
     if (nextBtn) {
       nextBtn.addEventListener('click', () => {
-        navigate(`play?stage=${stageId + 1}`);
+        const nextId = subNum < 3
+          ? `${stageNum}-${subNum + 1}`
+          : `${stageNum + 1}-1`;
+        navigate(`play?stage=${nextId}`);
       });
     }
 
