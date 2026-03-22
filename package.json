@@ -8,7 +8,8 @@
     "build": "granite build",
     "dev:vite": "vite --host",
     "build:vite": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test src/game/score.test.js server/routes/attendance.test.js"
   },
   "dependencies": {
     "@apps-in-toss/web-framework": "^1.14.1",

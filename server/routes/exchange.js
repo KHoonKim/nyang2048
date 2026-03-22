@@ -40,10 +40,12 @@ export default function exchangeRoutes(db) {
     });
   });
 
-  // 교환 확정
+  // 교환 확정 (소유자 검증 포함)
   router.post('/exchange/:id/confirm', (req, res) => {
     const { id } = req.params;
-    db.prepare(`UPDATE exchanges SET status = 'confirmed' WHERE id = ?`).run(id);
+    const { userHash } = req.body;
+    if (!userHash) return res.status(400).json({ error: 'missing_user' });
+    db.prepare(`UPDATE exchanges SET status = 'confirmed' WHERE id = ? AND user_hash = ?`).run(id, userHash);
     res.json({ success: true });
   });
 
@@ -56,6 +58,22 @@ export default function exchangeRoutes(db) {
     db.prepare(`INSERT INTO coin_transactions (user_hash, amount, reason) VALUES (?, ?, 'exchange_restore')`).run(ex.user_hash, ex.coin_count);
     db.prepare(`UPDATE exchanges SET status = 'restored' WHERE id = ?`).run(id);
     res.json({ success: true, restoredCoins: ex.coin_count });
+  });
+
+  // 코인 소모 (아이템 구매 등)
+  router.post('/spend', (req, res) => {
+    const { userHash, amount, reason } = req.body;
+    if (!userHash || !amount || amount <= 0) return res.status(400).json({ error: 'missing_params' });
+
+    const coinRow = db.prepare(`
+      SELECT COALESCE(SUM(amount), 0) as coins FROM coin_transactions WHERE user_hash = ?
+    `).get(userHash);
+    const coins = coinRow?.coins || 0;
+
+    if (coins < amount) return res.json({ error: 'insufficient_coins' });
+
+    db.prepare(`INSERT INTO coin_transactions (user_hash, amount, reason) VALUES (?, ?, ?)`).run(userHash, -amount, reason || 'item_purchase');
+    res.json({ success: true, coins: coins - amount });
   });
 
   // 교환 내역 조회

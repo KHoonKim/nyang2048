@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "start": "TZ=Asia/Seoul node index.js",
-    "dev": "TZ=Asia/Seoul node --watch index.js"
+    "dev": "TZ=Asia/Seoul node --watch index.js",
+    "test": "node --test routes/attendance.test.js"
   },
   "dependencies": {
     "better-sqlite3": "^12.8.0",

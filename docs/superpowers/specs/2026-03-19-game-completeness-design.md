@@ -291,15 +291,26 @@ location /api/nyang2048/ {
 
 ---
 
-## 구현 순서
+## 구현 범위
 
-1. **서버 기반** — DB 스키마, auth, coins, exchange, promo (gift-cat 복사 + 수정)
+### 1차 구현 (현재)
+- A) 스테이지 메달 시스템
+- B) 고양이 희귀도 등급
+- E) 출석 스트릭
+- G) 포인트 교환 화면
+- 서버 기반 (auth, coins, exchange, promo, attendance)
+
+### 2차 구현 (추후)
+- C) 데일리 미션
+- D) 주간 랭킹
+- F) 데일리 챌린지
+
+## 구현 순서 (1차)
+
+1. **서버 기반** — DB 스키마, auth, coins, exchange, promo, attendance (gift-cat 복사 + 수정)
 2. **클라이언트 인증 플로우** — Toss OAuth 로그인, userHash 저장
 3. **포인트 교환 화면** — `exchange.js` 신규 화면
 4. **고양이 희귀도** — `stages.js` rarity 필드 + `collection.js` UI
 5. **스테이지 메달** — stars → medals 대체 (score.js, stages.js, home.js, result.js)
-6. **데일리 미션** — 서버 routes/missions.js + 클라이언트 패널
-7. **주간 랭킹** — 서버 routes/game.js + `ranking.js` 신규 화면
-8. **출석 스트릭** — 서버 routes/attendance.js + home.js 카운터
-9. **데일리 챌린지** — 서버 routes/daily-challenge.js + play.js 모드 분기
-10. **VPS 배포** — PM2, Nginx, 프로모 코드 설정
+6. **출석 스트릭** — 서버 routes/attendance.js + home.js 카운터
+7. **VPS 배포** — PM2, Nginx, 프로모 코드 설정

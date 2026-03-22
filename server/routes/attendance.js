@@ -35,6 +35,25 @@ function calcStreak(db, userHash) {
   return streak;
 }
 
+// 현재 7일 주기에서 체크된 날들 반환 (1~7일차)
+function getWeekDays(db, userHash, streak) {
+  if (streak === 0) return [];
+  const cycleDay = ((streak - 1) % 7) + 1;
+  const checked = [];
+  for (let i = 0; i < cycleDay; i++) {
+    checked.push(i + 1);
+  }
+  return checked;
+}
+
+// 사이클 시작일 계산 (YYYY-MM-DD)
+function getCycleStartDate(todayKST, cycleDay, checkedToday) {
+  const offset = checkedToday ? cycleDay - 1 : cycleDay;
+  const d = new Date(todayKST + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() - offset);
+  return d.toISOString().slice(0, 10);
+}
+
 export default function attendanceRoutes(db) {
   const router = Router();
 
@@ -56,43 +75,35 @@ export default function attendanceRoutes(db) {
     }
 
     const streak = calcStreak(db, userHash);
+    const cycleDay = ((streak - 1) % 7) + 1; // 1~7
 
-    // 7일 연속 달성 시 LUCKY_TIERS 코인 지급 (잭팟 최대 100코인으로 제한 — 서버 비용 보호)
+    // 코인 지급: 1~6일차 1코인, 7일차부터 3코인
+    let dailyCoins = 0;
     let bonusCoins = 0;
-    if (streak % 7 === 0 && !existing) {
-      const LUCKY_TIERS = [
-        { min: 10, max: 15, probability: 0.60 },
-        { min: 16, max: 25, probability: 0.20 },
-        { min: 26, max: 50, probability: 0.189899 },
-        { min: 50, max: 100, probability: 0.01 },
-        { min: 10000, max: 10000, probability: 0.000001 },
-      ];
-      let rand = Math.random();
-      let cumulative = 0;
-      for (const tier of LUCKY_TIERS) {
-        cumulative += tier.probability;
-        if (rand < cumulative) {
-          bonusCoins = Math.floor(Math.random() * (tier.max - tier.min + 1)) + tier.min;
-          break;
-        }
-      }
-      bonusCoins = Math.min(bonusCoins, 100);
-      if (bonusCoins > 0) {
-        db.prepare(
-          'INSERT INTO coin_transactions (user_hash, amount, reason) VALUES (?, ?, ?)'
-        ).run(userHash, bonusCoins, 'streak_bonus_7day');
-      }
+    if (!existing) {
+      dailyCoins = streak >= 7 ? 3 : 1;
+      db.prepare(
+        'INSERT INTO coin_transactions (user_hash, amount, reason) VALUES (?, ?, ?)'
+      ).run(userHash, dailyCoins, streak >= 7 ? 'attendance_streak7' : 'attendance_daily');
+      if (streak === 7) bonusCoins = 3; // 최초 7일 달성 표시용
     }
 
     const coinsRow = db.prepare(
       'SELECT COALESCE(SUM(amount), 0) as coins FROM coin_transactions WHERE user_hash = ?'
     ).get(userHash);
 
+    const weekDays = getWeekDays(db, userHash, streak);
+    const cycleStartDate = getCycleStartDate(today, cycleDay, true);
+
     res.json({
       success: true,
       streak,
+      cycleDay,
+      weekDays,
+      cycleStartDate,
       alreadyChecked: !!existing,
       bonusCoins,
+      dailyCoins,
       totalCoins: coinsRow.coins,
     });
   });
@@ -105,7 +116,10 @@ export default function attendanceRoutes(db) {
     const checkedToday = !!db.prepare(
       'SELECT date FROM attendance WHERE user_hash = ? AND date = ?'
     ).get(userHash, today);
-    res.json({ streak, checkedToday });
+    const cycleDay = streak > 0 ? ((streak - 1) % 7) + 1 : 0;
+    const weekDays = getWeekDays(db, userHash, streak);
+    const cycleStartDate = streak > 0 ? getCycleStartDate(today, cycleDay, checkedToday) : today;
+    res.json({ streak, checkedToday, cycleDay, weekDays, cycleStartDate });
   });
 
   return router;

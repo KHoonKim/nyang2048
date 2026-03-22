@@ -177,3 +177,25 @@ export function loadBoard(stageId) {
 export function clearBoard(stageId) {
   localStorage.removeItem(boardKey(stageId));
 }
+
+export function findSavedBoard() {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('nyang2048_last_board_')) {
+        const data = localStorage.getItem(key);
+        if (data) {
+          const suffix = key.slice('nyang2048_last_board_'.length);
+          if (suffix.startsWith('s')) {
+            const stageId = suffix.slice(1);
+            return { stageId, navHash: `play?stage=${stageId}` };
+          } else if (suffix.startsWith('inf')) {
+            const size = suffix.includes('_') ? suffix.split('_')[1] : '4';
+            return { stageId: suffix, navHash: `play?infinite=${size}` };
+          }
+        }
+      }
+    }
+  } catch {}
+  return null;
+}

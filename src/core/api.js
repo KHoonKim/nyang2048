@@ -3,7 +3,12 @@ const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:4006/api/ny
 
 async function getUserHash() {
   if (window.AIT) return AIT.getUserKeyForGame();
-  return localStorage.getItem('nyang-uid') || 'web_anonymous';
+  let uid = localStorage.getItem('nyang-uid');
+  if (!uid) {
+    uid = crypto.randomUUID();
+    localStorage.setItem('nyang-uid', uid);
+  }
+  return uid;
 }
 
 export async function apiGet(path) {
@@ -32,8 +37,8 @@ export async function checkAttendance() {
   return apiPost('/attendance', { userHash });
 }
 
-// 출석 스트릭 조회
-export async function getStreak() {
+// 출석 현황 조회 (체크 없이)
+export async function getAttendanceStatus() {
   const userHash = await getUserHash();
   return apiGet(`/attendance/${userHash}`);
 }
@@ -42,18 +47,6 @@ export async function getStreak() {
 export async function getCoins() {
   const userHash = await getUserHash();
   return apiGet(`/coins/${userHash}`);
-}
-
-// 보상 뽑기
-export async function drawReward(type = 'gift') {
-  const userHash = await getUserHash();
-  return apiPost('/reward', { userHash, type });
-}
-
-// 교환 내역 조회
-export async function getExchanges() {
-  const userHash = await getUserHash();
-  return apiGet(`/exchanges/${userHash}`);
 }
 
 // 교환 신청
@@ -66,4 +59,16 @@ export async function requestExchange(coinCount) {
 export async function confirmExchange(exchangeId) {
   const userHash = await getUserHash();
   return apiPost(`/exchange/${exchangeId}/confirm`, { userHash });
+}
+
+// 코인 소모 (아이템 구매)
+export async function spendCoins(amount, reason) {
+  const userHash = await getUserHash();
+  return apiPost('/spend', { userHash, amount, reason });
+}
+
+// 교환 내역 조회
+export async function getExchangeHistory() {
+  const userHash = await getUserHash();
+  return apiGet(`/exchanges/${userHash}`);
 }
