@@ -9,6 +9,11 @@ export function renderHome() {
   const app = document.getElementById('app');
   const unlockedRaw = getUnlockedStage(); // e.g. "3-2"
   const { stageNum: unlockedStageNum, subNum: unlockedSubNum } = parseStageId(unlockedRaw);
+
+  // 클리어 애니메이션 준비: 렌더 전에 읽어서 초기 상태에 반영
+  const justClearedRaw = sessionStorage.getItem('nyang-just-cleared');
+  const justCleared = justClearedRaw ? parseStageId(justClearedRaw) : null;
+  const isSub3Clear = justCleared?.subNum === 3;
   const infiniteUnlocked = isInfiniteUnlocked();
   const totalCats = ALL_CATS_ORDERED.length;
   const collectionCount = getCollectionCount(totalCats);
@@ -36,7 +41,7 @@ export function renderHome() {
       if (locked) return '';
       const completedSubs = isCleared ? 3 : unlockedSubNum - 1;
       const dots = [1, 2, 3].map(i =>
-        `<span class="smap-subdot${i <= completedSubs ? ' smap-subdot--done' : ''}"></span>`
+        `<img src="paw-icon.png" class="smap-subdot${i <= completedSubs ? ' smap-subdot--done' : ' smap-subdot--pending'}" alt="">`
       ).join('');
       return `<div class="smap-subdots">${dots}</div>`;
     }
@@ -51,20 +56,22 @@ export function renderHome() {
         <span class="smap-node__lock">${ICON.lock}</span>
       </div>`;
     } else if (isCurrent) {
-      nodeHtml = `<button class="smap-node smap-node--current" id="smap-current" data-stage="${n}">
+      const preUnlock = isSub3Clear ? ' smap-node--pre-unlock' : '';
+      nodeHtml = `<button class="smap-node smap-node--current${preUnlock}" id="smap-current" data-stage="${n}">
         ${catId ? `<div class="smap-node__glow-wrap"><div class="smap-node__orange-silhouette" style="-webkit-mask-image:url(${catUrl});mask-image:url(${catUrl})"></div></div>` : ''}
         <span class="smap-node__play">▶</span>
       </button>`;
     } else {
+      const preReveal = (isSub3Clear && justCleared?.stageNum === n) ? ' smap-cat--pre-reveal' : '';
       nodeHtml = `<button class="smap-node smap-node--cleared" data-stage="${n}">
-        <img class="smap-node__cat" src="${getCatImage(catId)}" alt="">
+        <img class="smap-node__cat${preReveal}" src="${getCatImage(catId)}" alt="">
       </button>`;
     }
 
     return `<div class="smap-slot" style="left:${xPct}%">
       <div class="smap-node-wrap">
         ${nodeHtml}
-        <span class="smap-node__badge${isCurrent ? ' smap-node__badge--current' : ''}">${n}</span>
+        <span class="smap-node__badge${isCurrent ? ' smap-node__badge--current' : !locked ? ' smap-node__badge--cleared' : ''}">${n}</span>
       </div>
       ${subDots()}
     </div>`;
@@ -102,7 +109,7 @@ export function renderHome() {
             <span>포인트 교환</span>
           </button>
           <button class="home-nav-btn home-nav-btn--gift" id="gift-btn">
-            <img src="/present.webp" style="width:18px;height:18px;object-fit:contain;" alt="선물">
+            <img src="present.webp" style="width:18px;height:18px;object-fit:contain;" alt="선물">
             <span>오늘의 선물</span>
           </button>
         </div>
@@ -146,6 +153,15 @@ export function renderHome() {
 
   if (window.AIT) AIT.loadBannerAd('home-banner-ad');
 
+  // Debug: window.debugClear('1-3') → 클리어 애니메이션 시뮬레이션
+  window.debugClear = (stageId = '1-1') => {
+    const { stageNum, subNum } = parseStageId(stageId);
+    const nextId = subNum < 3 ? `${stageNum}-${subNum + 1}` : `${stageNum + 1}-1`;
+    localStorage.setItem('nyang2048_stage_unlocked', nextId);
+    sessionStorage.setItem('nyang-just-cleared', stageId);
+    renderHome();
+  };
+
   // ── Restore saved game modal ──
   const savedGame = findSavedBoard();
   if (savedGame) {
@@ -184,19 +200,71 @@ export function renderHome() {
     });
   }
 
-  // Scroll current stage to bottom of visible area + position CTA button
+  // Scroll + paw animation sequence
   requestAnimationFrame(() => {
     const wrap = document.querySelector('.stage-map-wrap');
-    const node = document.getElementById('smap-current');
-    if (wrap && node) {
-      const wrapRect = wrap.getBoundingClientRect();
-      const nodeRect = node.getBoundingClientRect();
-      wrap.scrollTop += nodeRect.bottom - wrapRect.bottom + 110;
-    }
+    const currentNode = document.getElementById('smap-current');
+
     const panel = document.getElementById('attend-panel');
     const ctaBtn = document.getElementById('stage-cta-btn');
     if (panel && ctaBtn) {
       ctaBtn.style.bottom = (panel.offsetHeight + 16) + 'px';
+    }
+
+    function scrollToNode(node, behavior = 'smooth') {
+      if (!wrap || !node) return;
+      const wrapRect = wrap.getBoundingClientRect();
+      const nodeRect = node.getBoundingClientRect();
+      const delta = nodeRect.bottom - wrapRect.bottom + 150;
+      if (behavior === 'instant') {
+        wrap.scrollTop += delta;
+      } else {
+        wrap.scrollBy({ top: delta, behavior: 'smooth' });
+      }
+    }
+
+    if (justCleared) {
+      sessionStorage.removeItem('nyang-just-cleared');
+      const { stageNum, subNum } = justCleared;
+      const clearedBtn = document.querySelector(`[data-stage="${stageNum}"]`);
+      const slot = clearedBtn?.closest('.smap-slot');
+      const dot = slot?.querySelectorAll('.smap-subdot')?.[subNum - 1];
+
+      // 1. 클리어한 스테이지로 이동
+      scrollToNode(clearedBtn, 'instant');
+
+      // 2. 발바닥 채우기 + 애니메이션
+      if (dot) {
+        setTimeout(() => {
+          dot.classList.remove('smap-subdot--pending');
+          dot.classList.add('smap-subdot--done', 'smap-subdot--pop');
+        }, 400);
+        setTimeout(() => dot.classList.remove('smap-subdot--pop'), 1400);
+      }
+
+      if (isSub3Clear) {
+        // 3. 고양이 reveal: pre-reveal 제거 → reveal 애니메이션 시작
+        const catImg = clearedBtn?.querySelector('.smap-node__cat');
+        setTimeout(() => {
+          catImg?.classList.remove('smap-cat--pre-reveal');
+          catImg?.classList.add('smap-cat--reveal');
+        }, 800);
+
+        // 4. 다음 스테이지로 스크롤
+        setTimeout(() => scrollToNode(currentNode, 'smooth'), 1500);
+
+        // 5. 잠금해제: pre-unlock 제거 → unlock 애니메이션
+        setTimeout(() => {
+          currentNode?.classList.remove('smap-node--pre-unlock');
+          currentNode?.classList.add('smap-node--unlock');
+          setTimeout(() => currentNode?.classList.remove('smap-node--unlock'), 800);
+        }, 1900);
+      } else {
+        // 3. 애니메이션 후 현재(다음) 스테이지로 카메라 이동
+        setTimeout(() => scrollToNode(currentNode, 'smooth'), 1500);
+      }
+    } else {
+      scrollToNode(currentNode, 'instant');
     }
   });
 
@@ -509,7 +577,7 @@ function showStageDetail(n) {
     const subCleared = isFullyCleared || (isCurrent && sub < unlockedSubNum);
     const isCurSub = isCurrent && sub === unlockedSubNum;
 
-    const statusIcon = subCleared ? ICON.check : isCurSub ? '▶' : ICON.lock;
+    const statusIcon = subCleared ? '<img src="paw-icon.png" style="width:20px;height:20px;object-fit:contain;">' : isCurSub ? '▶' : ICON.lock;
     const catCountLabel = `${catLineupUpTo(n, cfg.goal).length}마리`;
     const discoveryName = ['', '첫만남', '친해지기', '집사되기'][sub];
     const subStageId = `${n}-${sub}`;
@@ -518,7 +586,7 @@ function showStageDetail(n) {
       ? `<span class="stage-popup__sub-time">${String(Math.floor(bestTime / 60)).padStart(2, '0')}:${String(bestTime % 60).padStart(2, '0')}</span>`
       : '';
 
-    return `<div class="stage-popup__sub${!subUnlocked ? ' stage-popup__sub--locked' : ''}">
+    return `<div class="stage-popup__sub${!subUnlocked ? ' stage-popup__sub--locked' : subCleared ? ' stage-popup__sub--cleared' : ''}">
       <span class="stage-popup__sub-icon">${statusIcon}</span>
       <div class="stage-popup__sub-info">
         <span class="stage-popup__sub-name">${n}-${sub}${discoveryName ? `<span class="stage-popup__sub-discovery">${discoveryName}</span>` : ''}${timeBadge}</span>

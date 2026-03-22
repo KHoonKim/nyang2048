@@ -52,3 +52,7 @@ CREATE TABLE IF NOT EXISTS attendance (
   date TEXT NOT NULL,
   PRIMARY KEY (user_hash, date)
 );
+
+-- 인덱스: coin_transactions user_hash 조회 최적화
+-- (attendance는 PRIMARY KEY가 user_hash로 시작하므로 인덱스 불필요)
+CREATE INDEX IF NOT EXISTS idx_coin_tx_user ON coin_transactions(user_hash);

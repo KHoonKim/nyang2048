@@ -102,18 +102,17 @@ export function showCatDetail(catId) {
   overlay.innerHTML = `
     <div class="cat-detail-card ${isComplete ? 'cat-detail-card--complete' : ''}">
       <div class="cat-detail-card__badge">${badge}</div>
+      ${dialogue ? `
+        <div class="cat-speech-bubble visible">
+          <div class="cat-speech-bubble__text">${dialogue.text}</div>
+        </div>
+      ` : ''}
       <img src="${getCatImage(catId)}" alt="${name}" class="cat-detail-card__img">
       <div class="cat-detail-card__name">${name}</div>
       ${rarityLabel ? `<div class="cat-detail-card__rarity" style="color:${rarityColors[rarity]}">${rarityLabel}</div>` : ''}
       ${trait ? `<div class="cat-detail-card__trait">${trait}</div>` : ''}
       <div class="cat-detail-card__dots">${dots}</div>
       ${description ? `<div class="cat-detail-card__desc">${description}</div>` : ''}
-      ${dialogue ? `
-        <div class="cat-speech-bubble visible">
-          <div class="cat-speech-bubble__label">${dialogue.label}</div>
-          <div class="cat-speech-bubble__text">"${dialogue.text}"</div>
-        </div>
-      ` : ''}
       <button id="cat-detail-close" class="tds-btn tds-btn-light tds-btn-md tds-btn-block">닫기</button>
     </div>
   `;

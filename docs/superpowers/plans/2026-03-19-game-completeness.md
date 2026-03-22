@@ -686,11 +686,19 @@ return `
 `src/styles/main.css`의 `.cat-card` 관련 스타일 아래에 추가:
 
 ```css
+/* [DESIGN SPEC — Pass 5] 희귀도 색상을 CSS 변수로 중앙화 — raw hex 대신 관리 용이 */
+:root {
+  --rarity-common:    #9E9E9E;
+  --rarity-rare:      #2196F3;
+  --rarity-epic:      #9C27B0;
+  --rarity-legendary: #FFD700;
+}
+
 /* 희귀도 테두리 */
-.cat-card--common { --rarity-color: #9E9E9E; }
-.cat-card--rare   { --rarity-color: #2196F3; }
-.cat-card--epic   { --rarity-color: #9C27B0; }
-.cat-card--legendary { --rarity-color: #FFD700; }
+.cat-card--common    { --rarity-color: var(--rarity-common); }
+.cat-card--rare      { --rarity-color: var(--rarity-rare); }
+.cat-card--epic      { --rarity-color: var(--rarity-epic); }
+.cat-card--legendary { --rarity-color: var(--rarity-legendary); }
 
 .cat-card--rare,
 .cat-card--epic,
@@ -939,6 +947,22 @@ const medalHtml = medal ? `<span class="stage-medal stage-medal--${medal}">${{ b
 `<div class="stage-card__badge">${n}</div>${medalHtml}`
 ```
 
+**[DESIGN DECISION — Pass 1 결정]** 클리어된 스테이지 카드에 다음 목표 메달을 제시하는 재도전 CTA를 표시한다:
+
+```js
+// 클리어 여부와 상관없이 카드 하단 CTA 결정
+const nextMedalMap = { null: { label: '🥉 브론즈 도전하기', cta: '도전하기' }, bronze: { label: '🥈 실버 도전하기', cta: '실버 도전하기' }, silver: { label: '🥇 골드 도전하기', cta: '골드 도전하기' }, gold: null };
+const nextMedal = nextMedalMap[medal ?? 'null'];
+const ctaHtml = nextMedal
+  ? `<div class="stage-card__cta tds-btn tds-btn-md tds-btn-block">${nextMedal.cta}</div>`
+  : `<div class="stage-card__cta stage-card__cta--gold-done">🥇 최고 달성!</div>`;
+```
+
+- gold 달성 시: "🥇 최고 달성!" (비활성 상태, 달성감 표현)
+- silver 달성 시: "🥇 골드 도전하기"
+- bronze 달성 시: "🥈 실버 도전하기"
+- 미달성(cleared=false)시: "도전하기"
+
 - [ ] **Step 3: result.js — 클리어 시 메달 표시**
 
 `src/ui/result.js`에서 `getMedal`, `STAGE_MEDAL_TARGETS` import 추가:
@@ -954,7 +978,14 @@ import { getCatImage, CAT_NAMES, STAGES, STAGE_MEDAL_TARGETS } from '../game/sta
 // 클리어된 경우에만
 const medal = !isInfinite ? getMedal(stageId) : null;
 const medalLabel = { bronze: '🥉 브론즈', silver: '🥈 실버', gold: '🥇 골드' };
-const medalHtml = medal ? `<div class="result-medal">${medalLabel[medal]} 메달 획득!</div>` : '';
+// [DESIGN FIX — Pass 7] result-medal--${medal} 클래스 추가 (Pass 3 애니메이션과 일치)
+const medalHtml = medal ? `<div class="result-medal result-medal--${medal}">${medalLabel[medal]} 메달 획득!</div>` : '';
+
+// [DESIGN SPEC — Pass 7] 골드 메달 달성 시 햅틱 피드백 (AIT 환경에서만 동작)
+// medalHtml 렌더링 직후 또는 결과 화면 마운트 후 호출:
+if (medal === 'gold' && window.AIT) {
+  AIT.triggerHaptic?.('heavy');
+}
 ```
 
 결과 화면 HTML에서 `result-title` 아래에 `${medalHtml}` 삽입.
@@ -968,14 +999,45 @@ const medalHtml = medal ? `<div class="result-medal">${medalLabel[medal]} 메달
   line-height: 1;
 }
 
-/* 결과 화면 메달 */
+/* [DESIGN SPEC — Pass 5] 골드 달성 완료 카드 — 버튼이 아닌 달성 라벨 */
+.stage-card__cta--gold-done {
+  text-align: center;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rarity-legendary);
+  background: color-mix(in srgb, var(--rarity-legendary) 10%, transparent);
+  border-radius: var(--tds-r8, 8px);
+}
+
+/* 결과 화면 메달 — [DESIGN SPEC — Pass 3] scale+fade 진입 애니메이션 */
+@keyframes medal-pop {
+  0%   { transform: scale(0.5); opacity: 0; }
+  70%  { transform: scale(1.1); }
+  100% { transform: scale(1);   opacity: 1; }
+}
+@keyframes medal-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.08); }
+}
 .result-medal {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   margin: 8px 0 16px;
   color: var(--tds-primary);
+  animation: medal-pop 0.4s ease-out forwards;
+  display: inline-block;
+}
+/* 골드 메달만 팬즉 추가 */
+.result-medal--gold {
+  animation: medal-pop 0.4s ease-out,
+             medal-pulse 0.6s 0.4s ease-in-out;
 }
 ```
+
+> [DESIGN NOTE — Pass 3] 골드 달성 시 AIT.triggerHaptic() 호출 추가 권장.
+> result.js의 medalHtml 생성 시 `class="result-medal result-medal--${medal}"` 형식으로 클래스 부여.
+> 햅틱은 AIT 환경에서만 동작하므로 `if (window.AIT && medal === 'gold') AIT.triggerHaptic?.('heavy');` 가드 사용.
 
 - [ ] **Step 5: 빌드 확인**
 
@@ -990,6 +1052,21 @@ cd /Users/daniel/Documents/nyang2048
 git add src/ui/home.js src/ui/result.js src/styles/main.css
 git commit -m "feat: 홈 스테이지 카드 메달 표시 + 결과 화면 메달 연출"
 ```
+
+---
+
+---
+
+## [DESIGN SPEC — Pass 2] 인터랙션 상태 정의
+
+| 기능 | 로딩 | 빈 상태 | 에러 | 성공 |
+|------|------|---------|------|------|
+| 교환 화면 초기 로드 | 스피너 (`.exchange-loading__spinner`) | — | (getCoins 실패 시) 0코인으로 폴백, 교환 버튼 비활성 | 잔액+폼 표시 |
+| 교환 실행 버튼 | 버튼 disabled + "처리 중..." | — | toast: "교환에 실패했어요. 다시 시도해주세요." | toast: "🎉 N포인트 교환 완료!" → 홈 이동 |
+| 코인 부족 (empty) | — | "코인이 부족해요. 게임을 플레이해서 코인을 모아보세요!" | — | — |
+| 출석 스트릭 | (비동기, 화면 블로킹 없음) | streak=0이면 카운터 숨김 | API 실패 시 silent (카운터 미표시) | "🔥 N일 연속 출석!" toast |
+| 희귀도 뱃지 | — | 미수집 시 레이블 빈 문자열 | — | RARE/EPIC/LEGEND 텍스트 표시 |
+| 메달 (result) | — | 미클리어 시 미표시 | — | "🥉/🥈/🥇 메달 획득!" 텍스트 |
 
 ---
 
@@ -1016,38 +1093,47 @@ Expected: `main.js` 또는 `index.js` 확인
 
 ```js
 import { navigate } from '../core/router.js';
-import { getCoins, getExchanges, requestExchange, confirmExchange } from '../core/api.js';
+// [DESIGN FIX — Pass 7] getExchanges 제거 — 교환 내역 섹션 제거 결정
+import { getCoins, requestExchange, confirmExchange } from '../core/api.js';
 
 export async function renderExchange() {
   const app = document.getElementById('app');
   app.innerHTML = `<div class="exchange-screen">
     <div class="exchange-header">
-      <button class="exchange-back-btn" id="back-btn">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <!-- [DESIGN FIX — Pass 6] aria-label 추가: SVG만 있는 버튼은 스크린리더가 읽지 못함 -->
+      <button class="exchange-back-btn" id="back-btn" aria-label="뒤로가기">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
       <div class="exchange-title">포인트 교환</div>
     </div>
     <div class="exchange-body" id="exchange-body">
-      <div class="exchange-loading">불러오는 중...</div>
+      <!-- [DESIGN FIX — Pass 2] 로딩 중 텍스트 대신 스피너 표시 -->
+      <div class="exchange-loading"><div class="exchange-loading__spinner"></div></div>
     </div>
   </div>`;
 
   document.getElementById('back-btn').addEventListener('click', () => navigate('home'));
 
-  // 코인 잔액 로드
+  // 코인 잔액 로드 (교환 내역 제거됨 — Pass 7 결정)
   const coinsData = await getCoins();
   const coins = coinsData?.coins ?? 0;
-  const exchangeHistory = await getExchanges() ?? { exchanges: [] };
-  const exchanges = exchangeHistory.exchanges || [];
 
   const COINS_PER_POINT = 10;
   const canExchange = coins >= COINS_PER_POINT;
   const maxPoints = Math.floor(coins / COINS_PER_POINT);
 
+  // [DESIGN SPEC — Pass 4] 코인 수에 따라 다른 고양이 이미지 표시 (냥2048 개성)
+  // 많은 코인: 신난 고양이 (singapura-loaf — legendary), 적은 코인: 슬픈 고양이 (korean-loaf — common)
+  const catImg = coins >= 50
+    ? 'public/cats/singapura-loaf.webp'
+    : 'public/cats/korean-loaf.webp';
+  const catAlt = coins >= 50 ? '신난 고양이' : '코인이 부족한 고양이';
+
   document.getElementById('exchange-body').innerHTML = `
     <div class="exchange-balance">
+      <img src="${catImg}" alt="${catAlt}" class="exchange-balance__cat">
       <div class="exchange-balance__label">보유 코인</div>
       <div class="exchange-balance__amount">${coins.toLocaleString()} 코인</div>
     </div>
@@ -1058,8 +1144,9 @@ export async function renderExchange() {
       <div class="exchange-form">
         <div class="exchange-form__label">교환할 포인트</div>
         <div class="exchange-form__controls">
-          <input type="number" id="exchange-amount" class="exchange-form__input"
-            value="1" min="1" max="${maxPoints}" />
+          <!-- [DESIGN FIX — Pass 6] inputmode="numeric": 모바일에서 숫자 키패드 표시 -->
+          <input type="number" inputmode="numeric" id="exchange-amount" class="exchange-form__input"
+            value="1" min="1" max="${maxPoints}" aria-label="교환할 포인트 수" />
           <span class="exchange-form__unit">포인트</span>
         </div>
         <div class="exchange-form__info">= <span id="coin-calc">${COINS_PER_POINT}</span> 코인 사용</div>
@@ -1072,19 +1159,7 @@ export async function renderExchange() {
         코인이 부족해요.<br>게임을 플레이해서 코인을 모아보세요!
       </div>
     `}
-    ${exchanges.length > 0 ? `
-      <div class="exchange-history">
-        <div class="exchange-history__title">교환 내역</div>
-        ${exchanges.slice(0, 5).map(e => `
-          <div class="exchange-history__item">
-            <span>${e.points}포인트</span>
-            <span class="exchange-history__status exchange-history__status--${e.status}">
-              ${{ pending: '처리중', confirmed: '완료', restored: '취소' }[e.status] || e.status}
-            </span>
-          </div>
-        `).join('')}
-      </div>
-    ` : ''}
+    <!-- [DESIGN FIX — Pass 7] 교환 내역 섹션 제거 — 이미 exchange.js에서 제거된 기능 -->
   `;
 
   if (!canExchange) return;
@@ -1116,11 +1191,26 @@ export async function renderExchange() {
         } catch {}
       }
       navigate('home');
-      setTimeout(() => alert(`${points}포인트 교환 완료!`), 100);
+      // [DESIGN FIX — Pass 2] alert() 대신 기존 .toast 컴포넌트 사용
+      // alert()는 AIT 앱 내부에서 네이티브 다이얼로그를 띄워 UX를 해침
+      setTimeout(() => {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = `🎉 ${points}포인트 교환 완료!`;
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add('show'));
+        setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
+      }, 100);
     } else {
       btn.disabled = false;
       btn.textContent = '포인트로 교환하기';
-      alert('교환에 실패했어요. 다시 시도해주세요.');
+      // [DESIGN FIX — Pass 2] alert() → toast (에러도 동일 패턴)
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = '교환에 실패했어요. 다시 시도해주세요.';
+      document.body.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add('show'));
+      setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
     }
   });
 }
@@ -1160,6 +1250,8 @@ document.getElementById('exchange-btn')?.addEventListener('click', () => navigat
 .exchange-title { font-size: 18px; font-weight: 700; color: var(--tds-text); }
 .exchange-body { padding: 20px 16px; display: flex; flex-direction: column; gap: 20px; }
 .exchange-balance { background: var(--tds-bg-secondary); border-radius: 12px; padding: 20px; text-align: center; }
+/* [DESIGN SPEC — Pass 4] 고양이 이미지 */
+.exchange-balance__cat { width: 64px; height: 64px; object-fit: contain; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto; }
 .exchange-balance__label { font-size: 13px; color: var(--tds-sub); margin-bottom: 8px; }
 .exchange-balance__amount { font-size: 28px; font-weight: 800; color: var(--tds-text); }
 .exchange-rate { text-align: center; font-size: 13px; color: var(--tds-sub); }
@@ -1170,6 +1262,10 @@ document.getElementById('exchange-btn')?.addEventListener('click', () => navigat
 .exchange-form__unit { font-size: 14px; color: var(--tds-sub); }
 .exchange-form__info { font-size: 13px; color: var(--tds-sub); }
 .exchange-empty { text-align: center; color: var(--tds-sub); line-height: 1.6; padding: 20px; }
+/* [DESIGN FIX — Pass 2] 로딩 스피너 */
+.exchange-loading { display: flex; justify-content: center; padding: 40px; }
+.exchange-loading__spinner { width: 28px; height: 28px; border: 3px solid var(--tds-line); border-top-color: var(--app-brand); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .exchange-history__title { font-size: 14px; font-weight: 700; color: var(--tds-text); margin-bottom: 12px; }
 .exchange-history__item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--tds-line); }
 .exchange-history__status--confirmed { color: #2ecc71; }

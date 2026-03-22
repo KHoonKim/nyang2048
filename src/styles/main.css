@@ -544,6 +544,16 @@ body {
   width: calc(100% - 32px);
   transition: opacity 0.3s;
 }
+@keyframes hint-shake {
+  0%, 100% { transform: translateX(0) scale(1); }
+  15%       { transform: translateX(-10px) scale(1.04); }
+  35%       { transform: translateX(10px) scale(1.04); }
+  55%       { transform: translateX(-7px) scale(1.02); }
+  75%       { transform: translateX(7px) scale(1.02); }
+}
+.tutorial-hint--shake {
+  animation: hint-shake 0.45s ease-out;
+}
 
 .tutorial-dialogue-overlay {
   position: absolute;
@@ -1041,6 +1051,37 @@ body {
   margin-bottom: 14px;
 }
 .cat-detail-card .tds-btn { width: 100%; }
+
+/* 도감 팝업: 말풍선 꼬리가 아래(고양이 방향)를 향함 */
+.cat-detail-card .cat-speech-bubble {
+  margin: 36px 0 12px;
+}
+.cat-detail-card .cat-speech-bubble::before,
+.last-cat-overlay .cat-speech-bubble::before {
+  top: unset;
+  bottom: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-bottom: none;
+  border-top: 9px solid #E5E5E5;
+}
+.cat-detail-card .cat-speech-bubble::after,
+.last-cat-overlay .cat-speech-bubble::after {
+  top: unset;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-bottom: none;
+  border-top: 8px solid #fff;
+}
+
+/* last-cat-overlay 말풍선 */
+.last-cat-overlay .cat-speech-bubble {
+  margin: 0 0 16px;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+}
 
 /* ===== GAME BOARD ===== */
 .game-board {
@@ -1603,12 +1644,19 @@ body {
 
 .item-btn__count {
   position: absolute;
-  top: 5px;
-  left: 8px;
-  font-size: 14px;
-  font-weight: 800;
-  color: #191F28;
-  line-height: 1;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--tds-blue, #3182F6);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  padding: 0 4px;
+  box-sizing: border-box;
 }
 
 .item-btn__icon {
@@ -1621,7 +1669,7 @@ body {
 .item-btn__icon svg { width: 26px; height: 26px; }
 
 .item-btn__label {
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--tds-sub, #8b95a1);
   line-height: 1;
@@ -1630,7 +1678,7 @@ body {
 .item-btn--empty {
   background: #f2f4f6;
 }
-.item-btn--empty .item-btn__count { color: var(--tds-sub, #8b95a1); }
+.item-btn--empty .item-btn__count { background: var(--tds-sub, #8b95a1); }
 .item-btn--empty .item-btn__icon { color: var(--tds-sub, #8b95a1); opacity: 0.5; }
 
 .item-btn__refill {

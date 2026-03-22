@@ -17,6 +17,7 @@ export default defineConfig({
   web: {
     host: '0.0.0.0',
     port: 4009,
+    outdir: 'www',
     commands: {
       dev: 'vite --host',
       build: 'vite build',

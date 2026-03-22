@@ -27,6 +27,7 @@ app.use(prefix, promoRoutes(db));
 app.use(prefix, attendanceRoutes(db));
 
 app.get('/health', (_req, res) => res.json({ ok: true, service: 'nyang2048' }));
+app.get('/api/nyang2048/health', (_req, res) => res.json({ ok: true, service: 'nyang2048' }));
 
 app.listen(PORT, '127.0.0.1', () => {
   console.log(`[nyang2048] 서버 시작: http://localhost:${PORT}`);

@@ -224,22 +224,6 @@ export class Renderer {
         `;
         this._tilesLayer.appendChild(flash);
 
-        // Score popup
-        const popup = document.createElement('div');
-        popup.textContent = `+${value}`;
-        popup.style.cssText = `
-          position: absolute; left: 0; top: 0;
-          transform: translate(${x + cellSize / 2}px, ${y - 4}px) translateX(-50%);
-          color: ${highMerge ? '#f1c40f' : '#fff'};
-          font-size: ${highMerge ? '15px' : '12px'};
-          font-weight: 800;
-          text-shadow: 0 1px 4px rgba(0,0,0,0.6);
-          pointer-events: none;
-          z-index: 20;
-          opacity: 0;
-        `;
-        this._tilesLayer.appendChild(popup);
-
         requestAnimationFrame(() => requestAnimationFrame(() => {
           // Flash expands and fades
           const flashScale = highMerge ? 1.6 : 1.2;
@@ -248,20 +232,13 @@ export class Renderer {
           flash.style.opacity = '0';
           setTimeout(() => flash.remove(), 400);
 
-          // Score popup floats up
-          popup.style.transition = 'transform 0.6s ease-out, opacity 0.5s ease-out';
-          popup.style.transform = `translate(${x + cellSize / 2}px, ${y - (highMerge ? 40 : 28)}px) translateX(-50%)`;
-          popup.style.opacity = '1';
-          setTimeout(() => {
-            popup.style.opacity = '0';
-            setTimeout(() => popup.remove(), 300);
-          }, 350);
-
-          // Tile pops in with overshoot
+          // Tile pops in with overshoot, initially as number
           const popEasing = highMerge ? 'cubic-bezier(0.17, 0.89, 0.32, 1.5)' : 'cubic-bezier(0.17, 0.89, 0.32, 1.28)';
+          this._prepareNumberReveal(el, cellSize);
           el.style.transition = `transform 0.3s ${popEasing}, opacity 0.1s ease`;
           el.style.transform = `translate(${x}px, ${y}px) scale(1)`;
           el.style.opacity = '1';
+          this._scheduleCatReveal(el, x, y, cellSize);
         }));
       });
 
@@ -298,6 +275,50 @@ export class Renderer {
         this._animating = false;
       }, 300);
     }, ANIM_MS + 10);
+  }
+
+  _prepareNumberReveal(el, cellSize) {
+    const img = el.querySelector('img');
+    if (!img) return; // non-cat tile already shows number
+    // Hide cat image
+    img.style.opacity = '0';
+    img.style.transition = 'none';
+    // Create temporary centered number label
+    const numText = el.dataset.value >= 1000
+      ? (el.dataset.value / 1000).toFixed(el.dataset.value % 1000 === 0 ? 0 : 1) + 'k'
+      : el.dataset.value;
+    const tmpNum = document.createElement('span');
+    tmpNum.className = 'tile-num-reveal';
+    tmpNum.textContent = numText;
+    tmpNum.style.cssText = `
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 900;
+      font-size: ${cellSize > 60 ? '28px' : '20px'};
+      text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+      pointer-events: none; z-index: 2;
+    `;
+    el.appendChild(tmpNum);
+  }
+
+  _scheduleCatReveal(el, x, y, cellSize) {
+    const img = el.querySelector('img');
+    if (!img) return; // non-cat tile, nothing to reveal
+    setTimeout(() => {
+      // First half of flip: compress to 0
+      el.style.transition = 'transform 0.14s ease-in';
+      el.style.transform = `translate(${x}px, ${y}px) scaleX(0)`;
+      setTimeout(() => {
+        // Remove temp number, reveal cat
+        const tmpNum = el.querySelector('.tile-num-reveal');
+        if (tmpNum) tmpNum.remove();
+        img.style.transition = 'none';
+        img.style.opacity = '1';
+        // Second half: expand back
+        el.style.transition = 'transform 0.14s ease-out';
+        el.style.transform = `translate(${x}px, ${y}px) scale(1)`;
+      }, 140);
+    }, 360);
   }
 
   updatePositions() {
