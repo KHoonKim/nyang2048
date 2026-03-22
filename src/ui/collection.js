@@ -1,5 +1,6 @@
 import { navigate } from '../core/router.js';
 import { getCollection, getCollectionCount, getCatCount, COLLECTION_MAX, DEBUG_MODE } from '../game/score.js';
+import { getDialogue } from '../game/catDialogues.js';
 import { ALL_CATS_ORDERED, CAT_NAMES, CAT_TRAITS, CAT_DESCRIPTIONS, getCatImage, CAT_RARITY } from '../game/stages.js';
 
 export function renderCollection() {
@@ -29,7 +30,7 @@ export function renderCollection() {
       <button class="cat-card cat-card--${lvClass} cat-card--${rarity}"
         data-cat-id="${cat.id}" data-collected="${found}" ${!found ? 'disabled' : ''}
         data-rarity-label="${rarityLabels[rarity] || ''}">
-        ${found ? `<span class="cat-card__badge">${['', '첫만남', '친구', '집사'][catCount] || `${catCount}/${COLLECTION_MAX}`}</span>` : ''}
+        ${found ? `<span class="cat-card__badge">${['', '첫만남', '친해지기', '집사되기'][catCount] || `${catCount}/${COLLECTION_MAX}`}</span>` : ''}
         <img src="${getCatImage(cat.id)}"
           alt="${name}"
           class="cat-card__img" />
@@ -89,8 +90,9 @@ export function showCatDetail(catId) {
   const rarityColors = { common: '', rare: '#2196F3', epic: '#9C27B0', legendary: '#FFD700' };
   const rarityLabel = rarityLabels[rarity];
 
-  const DISCOVERY = ['', '첫만남', '친구', '집사'];
+  const DISCOVERY = ['', '첫만남', '친해지기', '집사되기'];
   const badge = DISCOVERY[count] || (isComplete ? DISCOVERY[3] : `${count}번 발견`);
+  const dialogue = getDialogue(catId, count);
   const dots = Array.from({ length: COLLECTION_MAX }, (_, i) =>
     `<span class="cat-detail-card__dot ${i < count ? 'cat-detail-card__dot--filled' : ''}"></span>`
   ).join('');
@@ -106,6 +108,12 @@ export function showCatDetail(catId) {
       ${trait ? `<div class="cat-detail-card__trait">${trait}</div>` : ''}
       <div class="cat-detail-card__dots">${dots}</div>
       ${description ? `<div class="cat-detail-card__desc">${description}</div>` : ''}
+      ${dialogue ? `
+        <div class="cat-speech-bubble visible">
+          <div class="cat-speech-bubble__label">${dialogue.label}</div>
+          <div class="cat-speech-bubble__text">"${dialogue.text}"</div>
+        </div>
+      ` : ''}
       <button id="cat-detail-close" class="tds-btn tds-btn-light tds-btn-md tds-btn-block">닫기</button>
     </div>
   `;
