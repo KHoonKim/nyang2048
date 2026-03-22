@@ -1,5 +1,6 @@
 import { navigate, getHashParams } from '../core/router.js';
-import { getBestScore, getBestTime } from '../game/score.js';
+import { getBestScore, getBestTime, getCatCount } from '../game/score.js';
+import { getDialogue } from '../game/catDialogues.js';
 import { getCatImage, CAT_NAMES, STAGES, parseStageId, getSubStageConfig } from '../game/stages.js';
 
 export function renderResult() {
@@ -57,12 +58,22 @@ export function renderResult() {
     <div class="result-new-cats">
       <div class="result-new-cats__label">새 고양이 발견!</div>
       <div class="result-new-cats__list">
-        ${discoveredCats.map(catId => `
-          <div class="result-new-cat">
-            <img src="${getCatImage(catId)}" alt="${CAT_NAMES[catId] || catId}">
-            <div class="result-new-cat__name">${CAT_NAMES[catId] || catId}</div>
-          </div>
-        `).join('')}
+        ${discoveredCats.map(catId => {
+          const count = getCatCount(catId);
+          const dialogue = getDialogue(catId, count);
+          return `
+            <div class="result-new-cat">
+              ${dialogue ? `
+                <div class="cat-speech-bubble" data-bubble>
+                  <div class="cat-speech-bubble__label">${dialogue.label}</div>
+                  <div class="cat-speech-bubble__text">"${dialogue.text}"</div>
+                </div>
+              ` : ''}
+              <img src="${getCatImage(catId)}" alt="${CAT_NAMES[catId] || catId}">
+              <div class="result-new-cat__name">${CAT_NAMES[catId] || catId}</div>
+            </div>
+          `;
+        }).join('')}
       </div>
     </div>
   ` : '';
@@ -121,6 +132,10 @@ export function renderResult() {
 
     loadResultAd();
     setTimeout(spawnConfetti, 300);
+    // 말풍선 fade-in (300ms delay)
+    setTimeout(() => {
+      document.querySelectorAll('[data-bubble]').forEach(el => el.classList.add('visible'));
+    }, 300);
 
     const nextBtn = document.getElementById('next-stage-btn');
     if (nextBtn) {
@@ -142,6 +157,7 @@ export function renderResult() {
     });
 
     document.getElementById('home-btn').addEventListener('click', async () => {
+      if (!isInfinite) sessionStorage.setItem('nyang-just-cleared', stageId);
       navigate('home');
     });
 
@@ -189,6 +205,10 @@ export function renderResult() {
     `;
 
     loadResultAd();
+    // 말풍선 fade-in (300ms delay)
+    setTimeout(() => {
+      document.querySelectorAll('[data-bubble]').forEach(el => el.classList.add('visible'));
+    }, 300);
     document.getElementById('restart-btn').addEventListener('click', async () => {
       if (window.AIT) {
         const count = AIT.getTodayGameCount();
